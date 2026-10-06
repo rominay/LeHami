@@ -1,0 +1,36 @@
+# @package _global_
+# Arm b0d, conservative single-rod pendulum: DINO-WM's ViTPredictor on the same frozen
+# DINOv2 features and the same projector as a0d -- only the predictor differs
+# (block-causal ViT vs Hamiltonian flow).
+#
+# The predictor is DINO-WM's models/vit.py (third_party/dino_wm @ 0a9492f, through
+# hjepa/dino_wm_adapter.py, which only fixes its hard-coded .to('cuda') mask)
+# with their predictor hyperparameters and concat_dim=1 action handling; the encoder is
+# their CLS configuration (their default uses 256 patch tokens per frame), so this is
+# DINO-WM's predictor in a matched harness.
+#
+# Clips: history_size = 3 (DINO-WM's num_hist) + num_preds = 8 -> T = 11 -> 8 unrolled
+# steps, the same rollout depth as a0d.
+defaults:
+  - override /model: dino_wm_cls
+  - override /data: pendulum
+
+phase: 0
+run_suffix: _dino_wm_cls_exp098_b0d
+history_size: 3
+num_preds: 8
+allow_num_steps_mismatch: true
+
+embed_dim: 384
+img_size: 64
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+loader:
+  batch_size: 32

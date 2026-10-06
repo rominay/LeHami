@@ -1,0 +1,4 @@
+key,tag,exp,weights,cell,receding,n_solves,cem_samples,cem_iters,predictor_calls,rollout_steps_per_iter,gflops_total,gflops_encode,gflops_cem,gflops_other,mflops_per_step_per_candidate,episode_s_median,plan_s_median,plan_s_min,plan_s_max,n_timed,device
+lewm,b0s,EXP-072,checkpoint s0,cell1_single_shot_H30_R30,30,1,300,19,570,30,3705.483537952,0.447741952,3705.035796,0.0,21.666876000000002,10.141956266000307,10.14,9.96,10.33,5,NVIDIA RTX A1000 6GB Laptop GPU
+lewm,b0s,EXP-072,checkpoint s0,cell2_goal_H30_R15,15,2,300,19,855,45,5558.337242416,0.783548416,5557.553694,0.0,21.666876000000002,15.167664838000746,15.16,14.98,15.25,5,NVIDIA RTX A1000 6GB Laptop GPU
+lewm,b0s,EXP-072,checkpoint s0,cell3_goal_H30_R9,9,4,300,19,1254,66,8152.533912544,1.455161344,8151.0787512,0.0,21.666876,21.91387366300023,21.91,21.71,22.2,5,NVIDIA RTX A1000 6GB Laptop GPU

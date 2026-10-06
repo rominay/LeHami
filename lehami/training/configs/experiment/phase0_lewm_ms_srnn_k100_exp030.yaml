@@ -1,0 +1,27 @@
+# @package _global_
+# Arm lewm, conservative single-rod pendulum: LeWM with a ViT-tiny encoder, trained
+# by multi-step rollout (sliding history_size=3 context, self-fed with its own
+# predictions, full BPTT). SIGReg weight 0.25, as for the Hamiltonian arm.
+#
+# Clips: T = history_size + num_preds = 3 + 8 = 11 -> 8 unrolled steps, the same depth
+# as the Hamiltonian arm. The manifest's num_steps is overridden
+# (allow_num_steps_mismatch).
+defaults:
+  - override /model: lewm_ms
+  - override /data: pendulum
+
+phase: 0
+run_suffix: _ms_srnn_k100_exp030
+history_size: 3
+num_preds: 8
+allow_num_steps_mismatch: true
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 100
+
+loader:
+  batch_size: 32

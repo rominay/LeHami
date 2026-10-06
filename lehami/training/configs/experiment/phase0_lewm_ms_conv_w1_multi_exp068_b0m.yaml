@@ -1,0 +1,29 @@
+# @package _global_
+# Arm b0m, conservative three-rod pendulum: LeWM, per-frame ConvNet encoder (W=1) --
+# the baseline for a0m, with the same encoder and data.
+#
+# Clips: T = 11 -> 3 context frames + 8 unrolled steps.
+defaults:
+  - override /model: lewm_ms_conv
+  - override /data: pendulum_multi_v2
+
+phase: 0
+run_suffix: _ms_conv_w1_multi_exp068_b0m
+history_size: 3
+num_preds: 8    # T = 11 = T_eff (no temporal lead-in at W=1)
+allow_num_steps_mismatch: true
+
+model:
+  enc_window: 1
+  enc_variant: full
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 100
+
+loader:
+  batch_size: 32
+  num_workers: 3   # low, so that several runs can share one GPU

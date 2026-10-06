@@ -1,0 +1,56 @@
+defaults:
+  - model: lewm_ms     # every experiment config overrides this
+  - data: pendulum
+  - optim: default
+  - _self_
+
+checkpoint: null   # path to a checkpoint for eval; override with checkpoint=path/to/ckpt
+run_suffix: ""     # appended to the checkpoint dir name; set per experiment to avoid collisions
+
+# Resume training exactly (optimizer + scheduler + epoch + callbacks), not
+# weights-only: resume_from=/path/to/last.ckpt. max_epochs is absolute, so the run
+# finishes the epochs it had left. null = start from scratch.
+resume_from: null
+
+# Split manifest written by lehami/data/data_prep.py. When set, the train /
+# val / test episodes come from it (reproducible); when null, a random clip-level
+# split is drawn with train_split + seed.
+manifest: null
+
+# Allow a config's clip length to differ from the manifest's num_steps (episode_srnn
+# only): the model keeps its own clip length while sharing the manifest's episode
+# split and train_frames budget.
+allow_num_steps_mismatch: false
+
+seed: 42
+img_size: 64           # pendulum frames are 64x64
+embed_dim: 192         # encoder output width
+history_size: 3        # context frames fed to the predictor
+num_preds: 1           # steps to predict ahead
+train_split: 0.9
+
+wandb:
+  project: hjepa
+  entity: null     # your W&B entity; null = your default one
+  enabled: false   # wandb.enabled=true to log runs to W&B
+
+trainer:
+  max_epochs: 100
+  devices: auto
+  accelerator: gpu
+  precision: bf16-mixed
+  gradient_clip_val: 1.0
+
+loader:
+  batch_size: 128
+  num_workers: 4
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 3
+
+loss:
+  sigreg:
+    weight: 0.09
+    kwargs:
+      knots: 17
+      num_proj: 1024

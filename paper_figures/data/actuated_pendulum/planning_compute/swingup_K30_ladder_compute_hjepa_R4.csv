@@ -1,0 +1,2 @@
+key,tag,exp,weights,cell,receding,n_solves,cem_samples,cem_iters,predictor_calls,rollout_steps_per_iter,gflops_total,gflops_encode,gflops_cem,gflops_other,gflops_attention,mflops_per_step_per_candidate,episode_s_median,plan_s_median,plan_s_min,plan_s_max,n_timed,device
+hjepa,a0q,EXP-079,checkpoint s0,cell8_goal_H30_R4,4,8,300,30,3840,128,15614.32998528,4.024958976,15610.305024,2.304e-06,0.0,13.550612000000001,8.419018754000717,8.4,8.4,8.4,1,NVIDIA RTX A1000 6GB Laptop GPU

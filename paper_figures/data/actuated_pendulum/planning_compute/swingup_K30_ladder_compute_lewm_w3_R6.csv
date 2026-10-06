@@ -1,0 +1,2 @@
+key,tag,exp,weights,cell,receding,n_solves,cem_samples,cem_iters,predictor_calls,rollout_steps_per_iter,gflops_total,gflops_encode,gflops_cem,gflops_other,gflops_attention,mflops_per_step_per_candidate,episode_s_median,plan_s_median,plan_s_min,plan_s_max,n_timed,device
+lewm_w3,b3s,EXP-076,random init from EXP-076 config,cell6_goal_H30_R6,6,5,300,30,2850,95,18527.15554576,1.97656576,18525.17898,0.0,189.11232,21.666876000000002,46.123332739000034,46.11,46.11,46.11,1,NVIDIA RTX A1000 6GB Laptop GPU

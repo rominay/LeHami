@@ -1,0 +1,32 @@
+# @package _global_
+# Arm b0s: LeWM, per-frame ConvNet encoder (W=1) -- the baseline for the W=1
+# Hamiltonian arms. Its ARPredictor is conditioned on the torque through its action
+# encoder, on the h actions spanning each context window, as in LeWorldModel.
+#
+# Actuated pendulum (pendulum_swingup): 630 train episodes, so 35 epochs give about
+# the same number of optimiser steps as 100 epochs on the three-rod set.
+# Clips: T = 11 -> 3 context frames + 8 unrolled steps.
+defaults:
+  - override /model: lewm_ms_conv
+  - override /data: pendulum_swingup
+
+phase: 0
+run_suffix: _ms_conv_w1_swingup_exp072_b0s
+history_size: 3
+num_preds: 8    # T = 11 = T_eff (no temporal lead-in at W=1)
+allow_num_steps_mismatch: true
+
+model:
+  enc_window: 1
+  enc_variant: full
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 35
+
+loader:
+  batch_size: 32
+  num_workers: 3   # low, so that several runs can share one GPU

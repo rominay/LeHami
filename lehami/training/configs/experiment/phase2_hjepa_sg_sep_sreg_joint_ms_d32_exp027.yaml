@@ -1,0 +1,31 @@
+# @package _global_
+# Arm hjepa, conservative single-rod pendulum: Hamiltonian flow (LeHami) with a
+# ViT-tiny encoder and Savitzky-Golay momentum.
+#
+# Clips: T = history_size + num_preds = 14 -> anchor at frame 3 (causal stencil over
+# frames 0..3), 8 unrolled steps, and 2 trailing frames for the centered stencil at
+# the last target. The manifest's num_steps (10) is overridden; its episode split and
+# frame budget still apply (allow_num_steps_mismatch).
+defaults:
+  - override /model: hjepa_sg_sep_sreg_joint_ms
+  - override /data: pendulum
+
+phase: 2
+run_suffix: _sg_sep_sreg_joint_ms_d32_exp027
+history_size: 1
+num_preds: 13   # T = 14: causal anchor window 0..3 + 8 targets + 2 centered-tail frames
+allow_num_steps_mismatch: true
+
+model:
+  latent_dim: 32
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+loader:
+  batch_size: 32

@@ -1,0 +1,16 @@
+# LeWM baseline with a ViT-tiny encoder: LeWorldModel's autoregressive transformer
+# predictor (ARPredictor), trained by multi-step rollout -- a sliding context window
+# fed with the model's own predictions, the same self-fed rollout used at eval.
+name: lewm_ms
+
+patch_size: 8          # 64 / 8 = 8 patches per side at img_size 64
+latent_dim: 64         # projector bottleneck, matching the Hamiltonian model's
+                       # phase-space dimension (2 x 32)
+
+predictor:
+  depth: 6
+  heads: 16
+  mlp_dim: 2048
+  dim_head: 64
+  dropout: 0.1
+  emb_dropout: 0.0

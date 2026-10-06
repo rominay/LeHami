@@ -1,0 +1,43 @@
+# @package _global_
+# Arm a0d, conservative single-rod pendulum: the Hamiltonian flow on a FROZEN
+# DINOv2 encoder (dinov2_vits14, CLS token). Paired with b0d
+# (phase0_dino_wm_cls_exp098_b0d), which shares encoder and projector, so the
+# predictor is the only difference. With the encoder frozen it cannot co-adapt with
+# either predictor.
+#
+# Needs the DINOv2 weights in the torch.hub cache
+# (lehami/experiments/download_dinov2.sh); the encoder raises with instructions
+# if they are missing.
+#
+# Clips: W = 1 -> T = 14 -> causal anchor window 0..3 + 8 unrolled steps + 2
+# centered-tail frames, the same rollout depth as b0d.
+defaults:
+  - override /model: hjepa_sg_sep_sreg_q_ms_dino
+  - override /data: pendulum
+
+phase: 2
+run_suffix: _sg_sep_dino_cls_exp098_a0d
+history_size: 1
+num_preds: 13
+allow_num_steps_mismatch: true
+
+# DINOv2 ViT-S/14 emits 384-d CLS features. _encoder() refuses to build if this
+# does not match the encoder's out_dim, rather than letting it surface as an
+# opaque matmul error inside the first training step.
+embed_dim: 384
+
+# img_size stays at the pendulum's native 64: the encoder upsamples to
+# dino_img_size on GPU, so raising this would push (224/64)^2 = 12x the bytes
+# through the CPU dataloader for an identical result.
+img_size: 64
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+loader:
+  batch_size: 32

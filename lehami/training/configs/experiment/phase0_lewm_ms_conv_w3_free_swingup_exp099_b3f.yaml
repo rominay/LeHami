@@ -1,0 +1,36 @@
+# @package _global_
+# Arm b3f: LeWM with an UNTIED 3-frame temporal encoder: identical to b3s except that
+# the temporal kernel is a free (a, b, c) rather than the tied, time-symmetric
+# (a, b, a). The odd part of the kernel is the only component that can carry the SIGN
+# of a velocity, and the tie fixes it at zero, so a tied encoder maps +omega and
+# -omega to the same latent; this arm lets the baseline learn it. Not usable for a
+# Hamiltonian arm, where an odd component would break the canonical (q, p) pair.
+#
+# Actuated pendulum (pendulum_swingup): 630 train episodes, so 35 epochs give about
+# the same number of optimiser steps as 100 epochs on the three-rod set.
+# Clips: T = 13 pixel frames -> 11 latent frames (W=3 consumes 2) -> 8 unrolled steps.
+defaults:
+  - override /model: lewm_ms_conv
+  - override /data: pendulum_swingup
+
+phase: 0
+run_suffix: _ms_conv_w3_free_swingup_exp099_b3f
+history_size: 3
+num_preds: 10   # T = 13 = T_eff(11) + (W-1); W=3 eats two lead-in frames
+allow_num_steps_mismatch: true
+
+model:
+  enc_window: 3
+  enc_variant: free
+  enc_lag: 1      # matches b3s; the free kernel's centroid is learned, not fixed
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 35
+
+loader:
+  batch_size: 32
+  num_workers: 3   # low, so that several runs can share one GPU

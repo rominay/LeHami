@@ -1,0 +1,17 @@
+# LeWM baseline with the ConvNet encoder: identical to lewm_ms (same ARPredictor,
+# latent_dim 64 bottleneck, multi-step rollout training, SIGReg) except that the
+# ViT-tiny encoder (~5.4M params) is replaced by the 4-block ConvEncoder (~315K
+# params), the encoder the Hamiltonian conv models use.
+name: lewm_ms_conv
+
+patch_size: 8          # unused by the ConvEncoder
+latent_dim: 64         # projector bottleneck, matching the Hamiltonian model's
+                       # phase-space dimension (2 x 32)
+
+predictor:
+  depth: 6
+  heads: 16
+  mlp_dim: 2048
+  dim_head: 64
+  dropout: 0.1
+  emb_dropout: 0.0

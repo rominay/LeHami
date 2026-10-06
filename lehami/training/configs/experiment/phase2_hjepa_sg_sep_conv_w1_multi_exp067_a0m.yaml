@@ -1,0 +1,32 @@
+# @package _global_
+# Arm a0m, conservative three-rod pendulum (pendulum_multi_v2, dt x 2 slice,
+# 210/45/45 episodes): Hamiltonian flow (LeHami), per-frame ConvNet encoder (W=1).
+# The rod length varies but is visible in every frame, so q can encode it.
+#
+# Clips: T = 14 -> causal anchor window 0..3 + 8 unrolled steps + 2 centered-tail frames.
+defaults:
+  - override /model: hjepa_sg_sep_sreg_joint_ms_conv
+  - override /data: pendulum_multi_v2
+
+phase: 2
+run_suffix: _sg_sep_conv_w1_multi_exp067_a0m
+history_size: 1
+num_preds: 13   # T = 14 = T_eff (no temporal lead-in at W=1)
+allow_num_steps_mismatch: true
+
+model:
+  latent_dim: 32
+  enc_window: 1
+  enc_variant: full   # ignored at W=1
+
+loss:
+  sigreg:
+    weight: 0.25
+
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+loader:
+  batch_size: 32
+  num_workers: 3   # low, so that several runs can share one GPU

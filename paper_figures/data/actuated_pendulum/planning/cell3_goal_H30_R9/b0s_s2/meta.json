@@ -1,0 +1,56 @@
+{
+ "args": {
+  "checkpoints": "b0s_s2=${STABLEWM_HOME}/checkpoints/lewm_ms_conv_pendulum_swingup_lewm_ms_conv_w1_swingup_exp072_b0s_s2/best.ckpt",
+  "n_ic": 16,
+  "planner_seeds": 3,
+  "horizon": 30,
+  "action_block": 3,
+  "receding": 9,
+  "replan": true,
+  "budget": 30,
+  "u_max": 4.0,
+  "dt_mult": 2,
+  "lengths": [
+   0.7,
+   1.0,
+   1.4
+  ],
+  "masses": [
+   0.5,
+   1.0,
+   2.0
+  ],
+  "cost": "terminal",
+  "p_weight": null,
+  "goal_mode": "dataset",
+  "goal_offset": 30,
+  "n_eval": 50,
+  "split": "test",
+  "dataset": "${STABLEWM_HOME}/pendulum_swingup.h5",
+  "manifest": "${SCRATCH}/hamiltonian-jepa/lehami/data/split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json",
+  "success_at": "target",
+  "theta_tol": 0.1,
+  "omega_tol": 0.5,
+  "cem_samples": 300,
+  "cem_iters": 30,
+  "cem_elites": 30,
+  "ic_seed": 1234,
+  "smoke": false,
+  "device": "cuda",
+  "out": "${SCRATCH}/hamiltonian-jepa/outputs/plan_replan_swingup/test/cell3_goal_H30_R9/b0s_s2"
+ },
+ "theta_tol": 0.2,
+ "omega_tol": 1.0,
+ "n_rows": 150,
+ "written": "2026-09-02T00:00:17",
+ "runtime": {
+  "cell_wall_s": 663.3,
+  "device": "NVIDIA L40S",
+  "cem": {
+   "samples": 300,
+   "iters": 30,
+   "elites": 30
+  },
+  "predictor_steps_per_solve": 10
+ }
+}
