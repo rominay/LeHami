@@ -1,4 +1,4 @@
-# LeHami: LeHami: Symplectic Latent Dynamics for World Models
+# LeHami: Symplectic Latent Dynamics for World Models
 
 [Romina Yalovetzky](https://rominayalovetzky.com/)\*, [Randall Balestriero](https://randallbalestriero.github.io/), and [Yann LeCun](http://yann.lecun.com/)
 
