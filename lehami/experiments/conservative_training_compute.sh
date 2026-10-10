@@ -33,7 +33,7 @@ done
 
 config() {
     case "$1" in
-        a0m) echo phase2_hjepa_sg_sep_conv_w1_multi_exp067_a0m ;;
+        a0m) echo phase2_lehami_sg_sep_conv_w1_multi_exp067_a0m ;;
         b0m) echo phase0_lewm_ms_conv_w1_multi_exp068_b0m ;;
         b1m) echo phase0_lewm_ms_conv_te_w3_multi_exp066_b1m ;;
         *) die "unknown arm '$1' (a0m | b0m | b1m)" ;;

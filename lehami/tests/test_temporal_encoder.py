@@ -30,7 +30,7 @@ import torch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "lehami" / "models"))
 
-from hjepa.builders import ConvEncoder, TemporalConvEncoder  # noqa: E402
+from lehami.builders import ConvEncoder, TemporalConvEncoder  # noqa: E402
 
 EMBED = 16
 IMG = 32
@@ -213,7 +213,7 @@ def test_odd_ratio_is_zero_for_tied_and_positive_for_free():
     `odd_ratio` is exactly 0 for a tied kernel at every step, so a non-zero
     reading on a `free` arm cannot be an artefact of the measurement.
     """
-    from hjepa.builders import _encoder_diagnostics
+    from lehami.builders import _encoder_diagnostics
 
     z = torch.randn(4, EMBED)
     torch.manual_seed(0)

@@ -8,7 +8,7 @@ theta / omega the representation carries at all -- separately from the generalis
 rollout-drift questions that the test-split CSVs answer.
 
     uv run python lehami/experiments/src/dump_probe_fit_scatter.py \
-        --checkpoint <ckpt>/best.ckpt --manifest <manifest.json> --exp-name exp071_a0s_hjepa_s0
+        --checkpoint <ckpt>/best.ckpt --manifest <manifest.json> --exp-name exp071_a0s_lehami_s0
 
 Output: `results/<exp_name>/probe_fit_scatter.csv`, tidy, one row per (tier, sample).
 The columns follow the DATASET, dispatched on target width exactly as

@@ -19,7 +19,7 @@ them is deliberate:
        generalisation.  The builders feed one scalar step size and (at W=1) have
        no channel to say which dt an episode used, so a mixed-dt manifest is
        ill-posed — see the header of
-       `configs/experiment/phase2_hjepa_sg_sep_conv_w1_multi_exp067_a0m.yaml`.
+       `configs/experiment/phase2_lehami_sg_sep_conv_w1_multi_exp067_a0m.yaml`.
        One rate here: `--dt-mult 2`, i.e. dt = 0.1 s, matching EXP-067/068.
 
 Both diversification axes are VISIBLE IN THE FRAME, and that is not cosmetic.

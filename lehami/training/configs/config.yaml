@@ -30,7 +30,7 @@ num_preds: 1           # steps to predict ahead
 train_split: 0.9
 
 wandb:
-  project: hjepa
+  project: lehami
   entity: null     # your W&B entity; null = your default one
   enabled: false   # wandb.enabled=true to log runs to W&B
 

@@ -1,7 +1,7 @@
 """Generate a DIVERSIFIED pendulum pixel dataset: several rod lengths x several
 sampling timesteps, over a fixed physical time window.
 
-Motivation (paper/notes/hjepa_status_audit.tex, ideas 2a + 2b):
+Motivation (paper/notes/lehami_status_audit.tex, ideas 2a + 2b):
 
   2a  Mixed-dt training.  The Hamiltonian flow takes dt as an argument and LeWM
       structurally cannot.  Training across several dt and evaluating on an

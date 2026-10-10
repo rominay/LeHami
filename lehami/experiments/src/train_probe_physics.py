@@ -28,9 +28,9 @@ This file also keeps its original standalone CLI (anchor-frame-only Ridge probe
 
 Usage:
     python lehami/experiments/src/train_probe_physics.py \\
-        --checkpoint ~/.stable_worldmodel/checkpoints/hjepa_fd_sep_lmom_pendulum_fd_sep_lmom_d192/best.ckpt \\
+        --checkpoint ~/.stable_worldmodel/checkpoints/lehami_fd_sep_lmom_pendulum_fd_sep_lmom_d192/best.ckpt \\
         --manifest   lehami/data/split_pendulum_episode_seed42.json \\
-        --exp-name   exp013_hjepa_fd_sep_lmom \\
+        --exp-name   exp013_lehami_fd_sep_lmom \\
         --device     cuda
 
     # smoke test
@@ -296,7 +296,7 @@ def collect_k1_probe_data(
     call (batch = number of valid anchors), not one call per anchor.
 
     Returns:
-        X: (N, 2·latent_dim) for hjepa models [cat(q_pred, p_pred)],
+        X: (N, 2·latent_dim) for lehami models [cat(q_pred, p_pred)],
            (N, embed_dim) for lewm [z_pred]
         Y: (N, 3) — [sinθ, cosθ, ω] at frame i+1, or (N, 4) with the rod length L
            appended when the dataset varies it (matching _collect_probe_episode_data,

@@ -1,5 +1,5 @@
 # DINO-WM baseline for the frozen-DINOv2 comparison: DINO-WM's ViTPredictor on
-# exactly the features and projector of hjepa_sg_sep_sreg_q_ms_dino, so the
+# exactly the features and projector of lehami_sg_sep_sreg_q_ms_dino, so the
 # predictor is the only difference between the two arms.
 #
 # Faithful to DINO-WM (third_party/dino_wm @ 0a9492f): models/vit.py::ViTPredictor
@@ -12,7 +12,7 @@
 # DINO-WM's CLS variant; their default feature key is x_norm_patchtokens.
 name: dino_wm_cls
 
-# frozen encoder, identical to hjepa_sg_sep_sreg_q_ms_dino
+# frozen encoder, identical to lehami_sg_sep_sreg_q_ms_dino
 encoder: dino
 dino_name: dinov2_vits14
 dino_feature_key: x_norm_clstoken

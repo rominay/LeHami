@@ -53,7 +53,7 @@ checkpoint by lehami/training/train.py.
 
 Usage:
     python lehami/experiments/src/run_eval.py \\
-        --checkpoint "$STABLEWM_HOME/checkpoints/hjepa_sg_sep_sreg_q_ms_conv_pendulum_swingup_sg_sep_conv_w1_swingup_exp079_a0q/best.ckpt" \\
+        --checkpoint "$STABLEWM_HOME/checkpoints/lehami_sg_sep_sreg_q_ms_conv_pendulum_swingup_sg_sep_conv_w1_swingup_exp079_a0q/best.ckpt" \\
         --manifest   lehami/data/split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json \\
         --exp-name   a0q --horizon 76
 
@@ -115,8 +115,8 @@ from probe_targets import (  # leaf module, no cycle — see its docstring
     target_names,  # noqa: F401 — re-exported for importers of this module
 )
 
-from hjepa.builders import REGISTRY, ConvEncoder, TemporalConvEncoder
-from hjepa.dino_wm_adapter import DinoEncoder
+from lehami.builders import REGISTRY, ConvEncoder, TemporalConvEncoder
+from lehami.dino_wm_adapter import DinoEncoder
 
 # Encoders that return a bare (B, embed_dim) tensor, as opposed to a HuggingFace
 # ViT output object that needs `.last_hidden_state[:, 0]` and an
@@ -138,17 +138,17 @@ _SG = {
     # The Hamiltonian flow with Savitzky-Golay momentum. The variants share one builder
     # and differ only in cfg.model.sigreg_mode / cfg.model.encoder, so all of them need
     # the same SG stencil at eval.
-    "hjepa_sg_sep_sreg_joint_ms",       # ViT-tiny encoder
-    "hjepa_sg_sep_sreg_joint_ms_conv",  # ConvNet encoder, SIGReg on [q, p]
-    "hjepa_sg_sep_sreg_q_ms_conv",      # SIGReg on q only
-    "hjepa_sg_sep_sreg_split_ms_conv",  # SIGReg on q and p independently
-    "hjepa_sg_sep_sreg_q_ms_dino",      # frozen DINOv2 encoder
+    "lehami_sg_sep_sreg_joint_ms",       # ViT-tiny encoder
+    "lehami_sg_sep_sreg_joint_ms_conv",  # ConvNet encoder, SIGReg on [q, p]
+    "lehami_sg_sep_sreg_q_ms_conv",      # SIGReg on q only
+    "lehami_sg_sep_sreg_split_ms_conv",  # SIGReg on q and p independently
+    "lehami_sg_sep_sreg_q_ms_dino",      # frozen DINOv2 encoder
 }
 
 
 def _mom_type(name: str) -> str:
     """Return 'lewm' (unconstrained predictor, no p) or 'sg' (Hamiltonian flow whose
-    momentum is the Savitzky-Golay derivative of q; see hjepa/derivative.py —
+    momentum is the Savitzky-Golay derivative of q; see lehami/derivative.py —
     causal stencil at anchors, centered elsewhere)."""
     if name in _LEWM:
         return "lewm"
@@ -160,7 +160,7 @@ def _mom_type(name: str) -> str:
 def _anchor_offset(mom_type: str, cfg=None) -> int:
     """Frames of history a rollout anchor needs before it: ANCHOR_OFFSET (3, the
     causal SG window) for sg, 1 otherwise."""
-    from hjepa.derivative import ANCHOR_OFFSET
+    from lehami.derivative import ANCHOR_OFFSET
     return ANCHOR_OFFSET if mom_type == "sg" else 1
 
 
@@ -168,7 +168,7 @@ def _p_series(q_enc: torch.Tensor, mom_type: str, fd_dt: float) -> torch.Tensor:
     """Reference momentum at every frame of an encoded trajectory q_enc (L, d): the SG
     interpolation series (centered interior, causal tail, backward FD at t=1)."""
     assert mom_type == "sg", f"no reference momentum for mom_type={mom_type!r}"
-    from hjepa.derivative import p_interp_series
+    from lehami.derivative import p_interp_series
     return p_interp_series(q_enc, fd_dt)
 
 
@@ -180,7 +180,7 @@ def _causal_p_batch(q_enc: torch.Tensor, idx: torch.Tensor, mom_type: str, fd_dt
     Not defined for "lewm", which has no momentum.
     """
     assert mom_type == "sg", f"no causal momentum for mom_type={mom_type!r}"
-    from hjepa.derivative import CAUSAL_WINDOW, p_causal_last
+    from lehami.derivative import CAUSAL_WINDOW, p_causal_last
     offs = torch.arange(-(CAUSAL_WINDOW - 1), 1, device=idx.device)
     window = q_enc[idx.unsqueeze(-1) + offs]        # (N, W, d)
     return p_causal_last(window, fd_dt)
@@ -191,7 +191,7 @@ def _has_energy(name: str) -> bool:
 
 
 def _latent_dim(cfg) -> int:
-    """Embedding dimension: latent_dim for hjepa models, embed_dim for lewm."""
+    """Embedding dimension: latent_dim for lehami models, embed_dim for lewm."""
     return cfg.model.get("latent_dim", cfg.embed_dim)
 
 
@@ -615,7 +615,7 @@ def _build_anchor(model, cls: torch.Tensor, q: torch.Tensor,
 
     q0 = q[a]
     assert mom_type == "sg", f"no anchor momentum for mom_type={mom_type!r}"
-    from hjepa.derivative import CAUSAL_WINDOW, p_causal_last
+    from lehami.derivative import CAUSAL_WINDOW, p_causal_last
     p0 = p_causal_last(q[a - CAUSAL_WINDOW + 1 : a + 1], fd_dt)
     return q0.detach(), p0.detach()
 
@@ -746,7 +746,7 @@ def _load_clips_from_manifest(
 
 class Probe(NamedTuple):
     ridge: Ridge
-    latent_dim: int   # dim of q (= dim of p for HJEPA models)
+    latent_dim: int   # dim of q (= dim of p for LeHami models)
     uses_p: bool = True  # True → input is cat(q,p) ∈ ℝ^{2d}; False → q/z only ∈ ℝ^d
 
 
@@ -765,7 +765,7 @@ def train_probe(
     For each clip (ep, start) of length ``num_steps``, extracts
     ``num_steps - 1`` samples at local frame indices i = 1, …, num_steps - 1:
 
-        input  : cat(q_i, p_i) ∈ ℝ^{2·latent_dim}   (HJEPA)
+        input  : cat(q_i, p_i) ∈ ℝ^{2·latent_dim}   (LeHami)
                  or  q_i/z_i ∈ ℝ^{latent_dim}         (LeWM / FD-only)
         target : [sin θ_i, cos θ_i, ω_i]
                   θ in radians (sinθ/cosθ are unitless), ω in rad/s
@@ -1222,7 +1222,7 @@ def evaluate_rollout(
                     per_k_en[0].append(H0)
 
             # k=1..k_range: autoregressive rollout
-            qp = torch.cat([q0, p0], dim=-1).unsqueeze(0)  # (1, phase_dim) for hjepa
+            qp = torch.cat([q0, p0], dim=-1).unsqueeze(0)  # (1, phase_dim) for lehami
             for k in range(1, k_range + 1):
                 frame_idx = a + k   # GT frame at rollout step k
                 if mom_type == "lewm":
@@ -1839,7 +1839,7 @@ def _multiclip_rollout_clip(
     # Build anchor (q0, p0)
     q0 = q_enc[anchor]
     assert mtype == "sg", f"no anchor momentum for mom_type={mtype!r}"
-    from hjepa.derivative import CAUSAL_WINDOW, p_causal_last
+    from lehami.derivative import CAUSAL_WINDOW, p_causal_last
     p0 = p_causal_last(q_enc[anchor - CAUSAL_WINDOW + 1 : anchor + 1], fd_dt)
     p_gt_all = _p_series(q_enc, mtype, fd_dt)
 

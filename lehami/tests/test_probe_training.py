@@ -139,7 +139,7 @@ class _MockModel(nn.Module):
         return _MockEncoderOutput(feat)
 
 
-def _make_cfg(model_name: str = "hjepa_sg_sep_sreg_joint_ms") -> SimpleNamespace:
+def _make_cfg(model_name: str = "lehami_sg_sep_sreg_joint_ms") -> SimpleNamespace:
     """Minimal config namespace for run_eval functions."""
     return SimpleNamespace(
         history_size=3,
@@ -199,7 +199,7 @@ def model():
 
 @pytest.fixture(scope="module")
 def cfg():
-    c = _make_cfg(model_name="hjepa_sg_sep_sreg_joint_ms")
+    c = _make_cfg(model_name="lehami_sg_sep_sreg_joint_ms")
     return _patch_cfg_model_get(c)
 
 
@@ -269,7 +269,7 @@ class TestProbeTraining:
         """For a learned-momentum model, uses_p must be True."""
         probe, _, _ = probe_and_clips
         assert probe.uses_p is True, (
-            "Expected uses_p=True for 'hjepa_sg_sep_sreg_joint_ms' (Savitzky-Golay momentum)"
+            "Expected uses_p=True for 'lehami_sg_sep_sreg_joint_ms' (Savitzky-Golay momentum)"
         )
 
     def test_probe_latent_dim(self, probe_and_clips):

@@ -1,6 +1,6 @@
 """Model-agnostic training entry point.
 
-Model builders live in lehami/models/hjepa/builders.py. This script owns
+Model builders live in lehami/models/lehami/builders.py. This script owns
 data loading, split logic and the Lightning training loop (and appends a run entry to
 a LABBOOK.md at the repository root if one exists; the release ships none).
 
@@ -12,7 +12,7 @@ Split modes (set via manifest=<path> Hydra override):
 Usage (the runner scripts in lehami/experiments/ make these calls for every
 arm and seed of the paper):
     python lehami/training/train.py \\
-        +experiment=phase2_hjepa_sg_sep_conv_w1_swingup_exp079_a0q \\
+        +experiment=phase2_lehami_sg_sep_conv_w1_swingup_exp079_a0q \\
         manifest=lehami/data/split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json
 
     # any Hydra override works, e.g. a one-epoch check with a different seed
@@ -49,7 +49,7 @@ import stable_worldmodel as swm
 from stable_pretraining import data as dt
 from omegaconf import DictConfig, OmegaConf
 
-from hjepa.builders import REGISTRY
+from lehami.builders import REGISTRY
 
 
 # ── data helpers ──────────────────────────────────────────────────────────────

@@ -29,7 +29,7 @@ import torch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "lehami" / "models"))
 
-from hjepa.ham_flow import (  # noqa: E402
+from lehami.ham_flow import (  # noqa: E402
     HamiltonianPredictor,
     SeparableHamiltonianFlow,
     SeparableHamiltonianNet,

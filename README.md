@@ -1,7 +1,10 @@
-# LeHami: Learning Symplectic World Models End-to-End
+# LeHami: LeHami: Symplectic Latent Dynamics for World Models
 
-Anonymous code release accompanying the submission. LeHami's predictor is a learned symplectic flow whose phase-space-like latent preserves volume by construction, avoiding some collapse modes. By design it represents the environment's complete physics, suiting velocity-dependent planning.
+[Romina Yalovetzky](https://rominayalovetzky.com/)\*, [Randall Balestriero](https://randallbalestriero.github.io/), and [Yann LeCun](http://yann.lecun.com/)
 
+**Abstract**: Joint-embedding predictive architectures (JEPAs) learn world models directly in latent space, but unconstrained autoregressive predictors may contract the latent distribution over long rollouts. We introduce Symplectic Hamiltonian JEPA (\textbf{LeHami}), which replaces the standard predictor with an action-conditioned Hamiltonian flow over a structured latent state $(\mathbf{q}, \mathbf{p})$ integrated using an exactly symplectic leapfrog step. This construction preserves phase-space volume at every rollout step and rules out uniform contraction, asymptotically stable fixed points, and merging of distinct latent states, independently of the learned parameters or action sequence. We obtain the momentum-like component from temporal derivatives of the learned position-like representation, providing an explicit second-order state for prediction and control. On conservative and actuated visual pendulum environments, LeHami substantially improves long-horizon velocity prediction over an unconstrained JEPA world model and empirically maintains constant latent volume where the baseline contracts. The learned flow also supports accurate integration at unseen sub-frame step sizes and numerical time reversal. These results show how geometric structure can provide inference-time guarantees that are complementary to representation regularization in latent world models.
+
+\* corresponding author: romina.yalovetzky@nyu.edu
 
 ## Contents
 
@@ -13,15 +16,15 @@ paper_figures/
   paper_figures.ipynb   every figure and table in the paper, end to end
   data/                 the frozen numbers it reads (CSV / JSON / NPZ)
 lehami/                 all the code; the method is called LeHami in the paper (its
-                        Python package keeps its original name, `hjepa`)
-  models/hjepa/         the method: the Hamiltonian flow predictor (ham_flow.py), the
+                        Python package keeps its original name, `lehami`)
+  models/lehami/         the method: the Hamiltonian flow predictor (ham_flow.py), the
                         momentum stencils (derivative.py), the model builders
                         (builders.py) and the adapter over DINO-WM (dino_wm_adapter.py)
   training/             train.py + Hydra configs (configs/model, configs/experiment, ...)
   data/                 dataset generators (conservative and actuated pendulum), the
                         prepare_*.sh scripts that run them with the paper's flags, and
                         the train/val/test split manifests used in the paper
-  experiments/*.sh      runners that train and evaluate every arm reported in the
+  experiments/*.sh      runners that train and evaluate every model reported in the
                         paper (see experiments/README.md)
   experiments/src/      the evaluation, probing and planning scripts they call
   tests/                unit tests (shape assertions, integrator properties, planning)
@@ -59,18 +62,18 @@ absent. That experiment also needs the DINOv2 weights (~89 MB), downloaded once 
 
 Some others are installed differently, see below.
 
-### What comes from where
-
-The comparison is built so that the **predictor is the only difference** between our
-model and the baselines; everything else is shared upstream code.
 
 | Source | What we use | Used by |
 |---|---|---|
-| [LeWorldModel](https://github.com/lucas-maes/le-wm) (`third_party/leworldmodel`) | `JEPA` (the encoder → projector → predictor wrapper and its rollout), `MLP` (projectors), `Embedder` (action encoder), `SIGReg` (anti-collapse regulariser), `ARPredictor` (the autoregressive transformer predictor) | all models; `ARPredictor` is the LeWM baseline's predictor, which our Hamiltonian flow (`models/hjepa/ham_flow.py`) replaces |
-| [DINO-WM](https://github.com/gaoyuezhou/dino_wm) (`third_party/dino_wm`) | `DinoV2Encoder` (frozen DINOv2, CLS token) and `ViTPredictor` (its space-time transformer predictor) | the frozen-DINOv2 experiment only, both arms share the encoder; `dino_wm_adapter.py` wraps them with one fix (the causal mask becomes a buffer so it follows `.to(device)`) |
+| [LeWorldModel](https://github.com/lucas-maes/le-wm) (`third_party/leworldmodel`) | `JEPA` (the encoder → projector → predictor wrapper and its rollout), `MLP` (projectors), `Embedder` (action encoder), `SIGReg` (anti-collapse regulariser), `ARPredictor` (the autoregressive transformer predictor) | all models; `ARPredictor` is the LeWM baseline's predictor, which our Hamiltonian flow (`models/lehami/ham_flow.py`) replaces |
+| [DINO-WM](https://github.com/gaoyuezhou/dino_wm) (`third_party/dino_wm`) | `DinoV2Encoder` (frozen DINOv2, CLS token) and `ViTPredictor` (its space-time transformer predictor) | the frozen-DINOv2 experiment only, both amodels share the encoder; `dino_wm_adapter.py` wraps them with one fix (the causal mask becomes a buffer so it follows `.to(device)`) |
 | [DINOv2](https://github.com/facebookresearch/dinov2) via `torch.hub` | `dinov2_vits14` weights | the frozen-DINOv2 experiment |
 | [stable-worldmodel](https://pypi.org/project/stable-worldmodel/) (pip) | `HDF5Dataset` (episode/clip loading from the `.h5` files) and the `$STABLEWM_HOME` data/checkpoint directory | `train.py`, `run_eval.py` |
 | [stable-pretraining](https://pypi.org/project/stable-pretraining/) (pip, installed with stable-worldmodel) | `Module` / `Manager` / `DataModule` (the Lightning training loop), `random_split`, image transforms | `train.py` |
+
+
+The comparison is built so that the **predictor is the only difference** between our
+model and the baselines; everything else is shared upstream code.
 
 Our own code is the Hamiltonian flow and its integrators, the momentum stencils, the
 pixel encoders used on the pendulum (`ConvEncoder` / `TemporalConvEncoder` in
@@ -134,10 +137,10 @@ The split is drawn with the seed *within* each design cell recorded in the HDF5 
 (rod length, and frame rate where it varies), so a file generated with the commands
 above yields the same episode lists as the shipped manifest.
 
-## Running the experiments
+## Running the experiments to reproduce the results discussed in the paper 
 
 With the datasets in place, every block of the paper has one script in
-`lehami/experiments/` that trains and evaluates all of its arms and seeds:
+`lehami/experiments/` that trains and evaluates:
 
 | Stage | Script | Paper |
 |---|---|---|
@@ -148,12 +151,17 @@ With the datasets in place, every block of the paper has one script in
 | 2 | `conservative_training_compute.sh` (after `conservative_multi_rod.sh`) | iso-compute table |
 | 2 | `actuated_planning.sh` (after `actuated_pendulum.sh`) | swing-up planning tables |
 
+In particular, for the experiments with the actuated pendulum, run the stage-1 scripts first; each stage-2 script reads the results of the stage-1
+script named beside it. For example, to reproduce the actuated-pendulum results and then
+the planning tables:
+
 ```bash
-bash lehami/experiments/actuated_pendulum.sh            # e.g. every actuated arm, 3 seeds
+bash lehami/experiments/actuated_pendulum.sh   # stage 1
+bash lehami/experiments/actuated_planning.sh   # stage 2, needs the checkpoints from stage 1
 ```
 
 [`lehami/experiments/README.md`](lehami/experiments/README.md) describes each script,
-the arm codes (`a0q`, `b0s`, ...) and a one-epoch smoke test of the whole chain.
+the model codes (`a0q`, `b0s`, ...) and a one-epoch smoke test of the whole chain.
 
 ### A single model by hand
 
@@ -162,17 +170,17 @@ The scripts are thin wrappers around two commands. To train the main actuated mo
 
 ```bash
 uv run python lehami/training/train.py \
-    +experiment=phase2_hjepa_sg_sep_conv_w1_swingup_exp079_a0q \
+    +experiment=phase2_lehami_sg_sep_conv_w1_swingup_exp079_a0q \
     manifest=lehami/data/split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json
 
 uv run python lehami/experiments/src/run_eval.py \
-    --checkpoint "$STABLEWM_HOME/checkpoints/hjepa_sg_sep_sreg_q_ms_conv_pendulum_swingup_sg_sep_conv_w1_swingup_exp079_a0q/best.ckpt" \
+    --checkpoint "$STABLEWM_HOME/checkpoints/lehami_sg_sep_sreg_q_ms_conv_pendulum_swingup_sg_sep_conv_w1_swingup_exp079_a0q/best.ckpt" \
     --manifest   lehami/data/split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json \
     --exp-name   a0q --horizon 76
 ```
 
 An experiment config names a model config, which names a builder in
-`lehami/models/hjepa/builders.py`. Checkpoints and the resolved config are
+`lehami/models/lehami/builders.py`. Checkpoints and the resolved config are
 written to `${STABLEWM_HOME}/checkpoints/<model>_<dataset><run_suffix>/`. Logging to
 Weights & Biases is off by default; add `wandb.enabled=true` (and
 `wandb.entity=<your entity>` if it is not your default one) to turn it on.
@@ -203,3 +211,7 @@ PNGs to `paper_figures/figures/<system>/`.
 ```bash
 uv run pytest lehami/tests/
 ```
+
+## License
+
+Released under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution.

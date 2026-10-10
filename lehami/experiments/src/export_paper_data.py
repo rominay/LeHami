@@ -51,13 +51,13 @@ def _savez(path, **arrays):
 # ── 1. copies ────────────────────────────────────────────────────────────────────
 def copy_conservative():
     # rollout MAE curves, 3 seeds per arm (Fig. cons-physics, Tab. cons-knnk1)
-    for stem in ("exp067_a0m_hjepa_w1_multi", "exp068_b0m_lewm_w1_multi"):
+    for stem in ("exp067_a0m_lehami_w1_multi", "exp068_b0m_lewm_w1_multi"):
         for i, suf in enumerate(("", "_s1", "_s2")):
             _copy(RES / f"{stem}{suf}" / "probe_metrics.csv",
                   CONS / "probe_metrics" / f"{stem}_s{i}.csv")
     # latent R^2 of the q and p blocks (Tab. cons-latent-r2); dt sweep and reversal
     for f in ("rollout_metrics.csv", "physics_dt.csv", "physics_reversal.csv"):
-        _copy(RES / "exp067_a0m_hjepa_w1_multi" / f, CONS / "exp067_a0m" / f)
+        _copy(RES / "exp067_a0m_lehami_w1_multi" / f, CONS / "exp067_a0m" / f)
     # Jacobian log-volume (Fig. cons-physics right, Fig./Tab. jacobian-volume)
     for f in ("jacobian_k0.csv", "jacobian_rollout.csv", "epsball.csv"):
         _copy(RES / "latent_volume" / f, CONS / "latent_volume" / f)
@@ -80,7 +80,7 @@ def copy_conservative():
 
 
 def copy_actuated():
-    for stem in ("exp079_a0q_hjepa", "exp072_b0s_lewm", "exp076_b3s_lewm"):
+    for stem in ("exp079_a0q_lehami", "exp072_b0s_lewm", "exp076_b3s_lewm"):
         for s in SEEDS:
             _copy(RES / f"{stem}_s{s}" / "probe_metrics.csv",
                   ACT / "probe_metrics" / f"{stem}_s{s}.csv")
@@ -120,7 +120,7 @@ def trim_actuated():
     # Anchor features of the frozen encoder, test split (Fig. canonicality, Tab. sign-blind).
     # Tab. sign-blind fits its kNN on a 12k-row subsample of the TRAIN anchors drawn with
     # rng(0); exactly those rows are kept, so the table is reproduced bit for bit.
-    for stem in ("exp079_a0q_hjepa", "exp072_b0s_lewm", "exp076_b3s_lewm"):
+    for stem in ("exp079_a0q_lehami", "exp072_b0s_lewm", "exp076_b3s_lewm"):
         for s in SEEDS:
             d = RES / f"{stem}_s{s}"
             z = np.load(d / "probe_features.npz")
@@ -132,9 +132,9 @@ def trim_actuated():
                    X_train_k0_sub12k=z["X_train_k0"][idx], Y_train_k0_sub12k=z["Y_train_k0"][idx],
                    y_cols=z["y_cols"], uses_p=z["uses_p"], latent_dim=z["latent_dim"],
                    n_test_episodes=_n_test(d))
-    # Encoder latents at every rollout step, HJEPA arms (Tab. episode-variance)
-    for stem in ("exp071_a0s_hjepa", "exp079_a0q_hjepa", "exp080_a0p_hjepa",
-                 "exp075_a3s_hjepa", "exp081_a3q_hjepa", "exp082_a3p_hjepa"):
+    # Encoder latents at every rollout step, LeHami arms (Tab. episode-variance)
+    for stem in ("exp071_a0s_lehami", "exp079_a0q_lehami", "exp080_a0p_lehami",
+                 "exp075_a3s_lehami", "exp081_a3q_lehami", "exp082_a3p_lehami"):
         for s in SEEDS:
             z = np.load(RES / f"{stem}_s{s}" / "rollout_latents.npz")
             ks = np.array([int(k) for k in z["ks"]])
@@ -151,7 +151,7 @@ def trim_actuated():
         _savez(ACT / "episode_parameters.npz", mass=f["mass"][:], length=f["length"][:],
                train_episode_indices=np.array(man["train_episode_indices"]),
                test_episode_indices=np.array(man["test_episode_indices"]))
-    for stem in ("exp079_a0q_hjepa", "exp072_b0s_lewm"):
+    for stem in ("exp079_a0q_lehami", "exp072_b0s_lewm"):
         for s in SEEDS:
             d = RES / f"{stem}_s{s}"
             z = np.load(d / "probe_features.npz")
@@ -193,7 +193,7 @@ def export_conservative_latents():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
 
     # LeHami, EXP-027
-    model, cfg = RE.load_model(CKPT / "hjepa_sg_sep_sreg_joint_ms_pendulum_sg_sep_sreg_joint_ms_d32_exp027"
+    model, cfg = RE.load_model(CKPT / "lehami_sg_sep_sreg_joint_ms_pendulum_sg_sep_sreg_joint_ms_d32_exp027"
                                / "best.ckpt", dev)
     h5 = RE._h5_path(cfg)
     enc = {k: [] for k in ("q", "p", "state", "ep")}
@@ -283,7 +283,7 @@ def export_actuated_landscape():
     torch, RE, _ = _models()
     dev = "cpu"
     model, cfg = RE.load_model(
-        CKPT / "hjepa_sg_sep_sreg_q_ms_conv_pendulum_swingup_hjepa_sg_sep_conv_w1_swingup_exp079_a0q_s0"
+        CKPT / "lehami_sg_sep_sreg_q_ms_conv_pendulum_swingup_lehami_sg_sep_conv_w1_swingup_exp079_a0q_s0"
         / "best.ckpt", dev)
     man = json.loads((DATA / "split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json")
                      .read_text())

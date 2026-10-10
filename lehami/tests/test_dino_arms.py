@@ -31,7 +31,7 @@ import torch
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "lehami" / "models"))
 
-from hjepa.dino_wm_adapter import (  # noqa: E402
+from lehami.dino_wm_adapter import (  # noqa: E402
     _DWM,
     DinoEncoder,
     _vit_module,
@@ -164,7 +164,7 @@ def test_img_size_must_be_a_multiple_of_the_patch_size():
 # so the builder's original pred_proj=None would have crashed straight after.
 
 def test_action_concat_wrapper_signature_and_width():
-    from hjepa.dino_wm_adapter import ActionConcatViTPredictor
+    from lehami.dino_wm_adapter import ActionConcatViTPredictor
 
     latent_dim, act_dim, frames = 16, 4, 3
     vit = make_vit_predictor(
@@ -178,7 +178,7 @@ def test_action_concat_wrapper_signature_and_width():
 
 
 def test_action_concat_wrapper_rejects_misaligned_actions():
-    from hjepa.dino_wm_adapter import ActionConcatViTPredictor
+    from lehami.dino_wm_adapter import ActionConcatViTPredictor
 
     vit = make_vit_predictor(num_patches=1, num_frames=3, dim=20,
                              depth=1, heads=4, mlp_dim=64, pool="mean")
@@ -193,7 +193,7 @@ def test_b0d_supports_the_jepa_predict_path_run_eval_uses():
     from hydra import compose, initialize_config_dir
 
     sys.path.insert(0, str(REPO / "third_party" / "leworldmodel"))
-    from hjepa.builders import REGISTRY
+    from lehami.builders import REGISTRY
 
     with initialize_config_dir(config_dir=str(REPO / "lehami" / "training" / "configs"),
                                version_base=None):

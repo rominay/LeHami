@@ -62,7 +62,7 @@ from run_eval import (  # noqa: E402
 # The conservative (undamped, unactuated) pendulum arm, EXP-027.
 DEFAULT_CKPT = (
     "${STABLEWM_HOME}/checkpoints/"
-    "hjepa_sg_sep_sreg_joint_ms_pendulum_sg_sep_sreg_joint_ms_d32_exp027/best.ckpt"
+    "lehami_sg_sep_sreg_joint_ms_pendulum_sg_sep_sreg_joint_ms_d32_exp027/best.ckpt"
 )
 
 

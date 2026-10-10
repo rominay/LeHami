@@ -34,7 +34,7 @@ feedback law is not a time-dependent Hamiltonian flow.
 
     .venv/bin/python lehami/experiments/src/make_concept_properties_actuated_figure.py
 
-Writes submission/figs/diagrams/concept_hjepa_properties_actuated.pdf (+ .png).
+Writes submission/figs/diagrams/concept_lehami_properties_actuated.pdf (+ .png).
 """
 from __future__ import annotations
 
@@ -348,7 +348,7 @@ def main():
     # directly above already reads "u = ..." under every thumbnail.
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
-        p = OUT_DIR / f"concept_hjepa_properties_actuated.{ext}"
+        p = OUT_DIR / f"concept_lehami_properties_actuated.{ext}"
         fig.savefig(p, dpi=200, bbox_inches="tight")
         print(f"wrote {p}")
     print(f"frame strip: stride={stride} = the dataset's torque hold; "

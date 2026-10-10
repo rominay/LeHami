@@ -3,11 +3,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "hjepa"
+name = "lehami"
 version = "0.1.0"
-description = "Hamiltonian JEPA: Structured Latent Dynamics for World Models"
+description = "LeHami: Symplectic Latent Dynamics for World Models"
 readme = "README.md"
-authors = [{name = "Anonymous", email = "anon@example.com"}]
+license = "Apache-2.0"
+authors = [
+    {name = "Romina Yalovetzky", email = "romina.yalovetzky@nyu.edu"},
+    {name = "Randall Balestriero"},
+    {name = "Yann LeCun"},
+]
 requires-python = ">=3.10"
 dependencies = [
     # LeWorldModel runtime deps (installs stable_pretraining + stable_worldmodel + lightning)
@@ -39,7 +44,7 @@ dev-dependencies = [
 #                 pinned commit 0a9492fa12044b852ae9e001cc74604b79c8bb0c
 
 [tool.hatch.build.targets.wheel]
-packages = ["lehami/models/hjepa"]
+packages = ["lehami/models/lehami"]
 
 [tool.ruff]
 line-length = 100

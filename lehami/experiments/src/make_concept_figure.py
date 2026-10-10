@@ -22,7 +22,7 @@ Hamiltonian because it is legible, not because it is what the model learns.
 
     .venv/bin/python lehami/experiments/src/make_concept_figure.py
 
-Writes submission/figs/diagrams/concept_hjepa.pdf (+ .png).
+Writes submission/figs/diagrams/concept_lehami.pdf (+ .png).
 """
 from __future__ import annotations
 
@@ -166,7 +166,7 @@ def main():
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
-        p = OUT_DIR / f"concept_hjepa.{ext}"
+        p = OUT_DIR / f"concept_lehami.{ext}"
         fig.savefig(p, dpi=200, bbox_inches="tight")
         print(f"wrote {p}")
     print("transported cloud areas:", [f"{a:.6f}" for a in areas],

@@ -1721,7 +1721,7 @@ wheels = [
 ]
 
 [[package]]
-name = "hjepa"
+name = "lehami"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

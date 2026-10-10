@@ -31,9 +31,9 @@ import torch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "lehami" / "models"))
 
-from hjepa.derivative import p_causal_last, p_interp_series  # noqa: E402
+from lehami.derivative import p_causal_last, p_interp_series  # noqa: E402
 
-from hjepa.ham_flow import SeparableHamiltonianFlow  # noqa: E402
+from lehami.ham_flow import SeparableHamiltonianFlow  # noqa: E402
 
 D, B = 4, 6
 
@@ -150,7 +150,7 @@ def _cfg(dt_ref=None):
 
 
 def _episode_h():
-    from hjepa.builders import _episode_h as f
+    from lehami.builders import _episode_h as f
     return f
 
 

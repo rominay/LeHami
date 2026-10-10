@@ -1,0 +1,21 @@
+# Hamiltonian flow (LeHami) with a ViT-tiny encoder. Momentum p is the time
+# derivative of the latent trajectory q, from fixed Savitzky-Golay stencils
+# (lehami/derivative.py): a causal 4-frame stencil at the rollout anchor (clip frame 3),
+# a centered 5-frame one at every target. The separable Hamiltonian K(p/s) + V(q, u)
+# is integrated with the leapfrog and unrolled over the clip; SIGReg acts on [q, p].
+# Needs clip length T = history_size + num_preds >= 9 (14 gives 8 unroll steps).
+name: lehami_sg_sep_sreg_joint_ms
+
+patch_size: 8
+latent_dim: 192         # d; phase space = R^{2d}
+
+fd_dt: 1.0
+momentum_weight: 1.0
+
+ham_flow:
+  hidden_dim: 1024
+  n_layers: 3
+  dt: 1.0
+  phase_space: true
+  separable: true
+  learnable_scale: true

@@ -10,7 +10,7 @@ A symplectic map satisfies M^T J_s M = J_s, hence (det M)^2 = 1 and |det M| = 1
 EXACTLY, everywhere, every step (Liouville). `SeparableHamiltonianFlow` is an
 exactly symplectic leapfrog: each substep updates one variable using only the
 other, so its Jacobian is unit-triangular and the learned K and V sit strictly
-off the diagonal, where they cannot touch the determinant. HJEPA reading ~0 here
+off the diagonal, where they cannot touch the determinant. LeHami reading ~0 here
 is therefore a CORRECTNESS CONTROL on the implementation, not evidence of a
 benefit -- say so when quoting it. The claim only becomes a mechanism result if
 the baseline's value is non-zero AND tracks something it measurably loses.
@@ -34,7 +34,7 @@ grows even under an exactly volume-preserving flow (measured 1.00 -> 1.15 and
 
 ═══ THE h=3 COMPLICATION, AND WHY TWO NUMBERS ARE REPORTED ══════════════════
 
-HJEPA (history_size 1) has a genuinely square map on its phase space:
+LeHami (history_size 1) has a genuinely square map on its phase space:
 (q, p) -> (q', p'), 2d x 2d. Its determinant is the phase-space volume factor.
 
 LeWM (history_size 3) does not. Its predictor consumes three latents and emits
@@ -50,7 +50,7 @@ near-infinite contraction -- true, but a statement about finite context rather
 than about learned dynamics, and a reviewer will say so.
 
 Both are therefore reported:
-  full    the literal phase-space volume (2d x 2d for HJEPA, hE x hE for LeWM)
+  full    the literal phase-space volume (2d x 2d for LeHami, hE x hE for LeWM)
   newest  d z_{t+1} / d z_t alone, d x d for both arms -- dimension-matched and
           interpretable as "how the newest state is rescaled", but NOT a volume.
 Quote `full` for the theorem and `newest` for the comparison; never one alone.
@@ -108,16 +108,16 @@ MAN_SWING = DATA / "split_pendulum_swingup_episode_srnn_K80_val.15_seed42.json"
 # key -> (label, checkpoint subdir, manifest, default horizon, results dir).
 # The results dir is where the notebook finds probe_metrics.csv for panel (c).
 ARMS = {
-    "a0m": ("HJEPA (EXP-067)",
-            "hjepa_sg_sep_sreg_joint_ms_conv_pendulum_multi_v2_sg_sep_conv_w1_multi_exp067_a0m",
-            MAN_MULTI, 70, "exp067_a0m_hjepa_w1_multi"),
+    "a0m": ("LeHami (EXP-067)",
+            "lehami_sg_sep_sreg_joint_ms_conv_pendulum_multi_v2_sg_sep_conv_w1_multi_exp067_a0m",
+            MAN_MULTI, 70, "exp067_a0m_lehami_w1_multi"),
     "b0m": ("LeWM  (EXP-068)",
             "lewm_ms_conv_pendulum_multi_v2_ms_conv_w1_multi_exp068_b0m",
             MAN_MULTI, 70, "exp068_b0m_lewm_w1_multi"),
-    "a0q": ("HJEPA (EXP-079, actuated)",
-            "hjepa_sg_sep_sreg_q_ms_conv_pendulum_swingup_hjepa_sg_sep_conv_w1_swingup"
+    "a0q": ("LeHami (EXP-079, actuated)",
+            "lehami_sg_sep_sreg_q_ms_conv_pendulum_swingup_lehami_sg_sep_conv_w1_swingup"
             "_exp079_a0q_s0",
-            MAN_SWING, 76, "exp079_a0q_hjepa_s0"),
+            MAN_SWING, 76, "exp079_a0q_lehami_s0"),
     "b0s": ("LeWM  (EXP-072, actuated)",
             "lewm_ms_conv_pendulum_swingup_lewm_ms_conv_w1_swingup_exp072_b0s_s0",
             MAN_SWING, 76, "exp072_b0s_lewm_s0"),
@@ -146,7 +146,7 @@ def _spectrum(J: torch.Tensor, rel_tol: float = 1e-6) -> dict:
     numerically annihilated by the step, which is MERGING -- two states differing
     only along such a direction map to the same image, and no probe downstream can
     tell them apart. A symplectic map cannot do this (|det| = 1 bounds every
-    sigma_i away from 0), so the count is 0 for HJEPA by construction.
+    sigma_i away from 0), so the count is 0 for LeHami by construction.
     """
     # On CPU: consumer GPUs run float64 at 1/32 rate and a per-step 192x192
     # cuSOLVER SVD dominates the whole run (11 min vs 2 min measured). The matrix
@@ -176,7 +176,7 @@ def _slogdet_per_dim(J: torch.Tensor) -> float:
 
 # ── the one-step maps ────────────────────────────────────────────────────────
 
-def _step_hjepa(model, qp, u, h_scalar):
+def _step_lehami(model, qp, u, h_scalar):
     """(1, phase_dim) -> (1, phase_dim): one leapfrog step under action u."""
     return model.predictor(
         qp.unsqueeze(1), u.unsqueeze(1),
@@ -186,10 +186,10 @@ def _step_hjepa(model, qp, u, h_scalar):
 
 
 @torch.enable_grad()
-def jac_hjepa(model, qp, u, h_scalar):
-    """Jacobian of the HJEPA step AT state `qp`. Square, phase_dim x phase_dim."""
+def jac_lehami(model, qp, u, h_scalar):
+    """Jacobian of the LeHami step AT state `qp`. Square, phase_dim x phase_dim."""
     def step(v):
-        return _step_hjepa(model, v.unsqueeze(0), u, h_scalar).squeeze(0)
+        return _step_lehami(model, v.unsqueeze(0), u, h_scalar).squeeze(0)
 
     v0 = qp.reshape(-1).detach().requires_grad_(True)
     return torch.autograd.functional.jacobian(step, v0, vectorize=True)
@@ -309,7 +309,7 @@ def _rollout_rows(model, cfg, f, ep, offs, lens, device, horizon, u_zero,
         for k in range(1, k_range + 1):
             u_k = _act_emb_at(model, acts, u_zero, a + k - 1, lat2pix)
             if (k - 1) % k_stride == 0:
-                J_full = jac_hjepa(model, qp, u_k, hs)
+                J_full = jac_lehami(model, qp, u_k, hs)
                 # history_size 1: the state IS the newest state, so the
                 # newest-state map is the whole map. NOT the q-block -- the
                 # q-block of a symplectic map is not itself volume-preserving,
@@ -322,7 +322,7 @@ def _rollout_rows(model, cfg, f, ep, offs, lens, device, horizon, u_zero,
                     **_spectrum(J_full),
                 }
             with torch.no_grad():
-                qp = _step_hjepa(model, qp, u_k, hs).detach()
+                qp = _step_lehami(model, qp, u_k, hs).detach()
 
 
 def _eps_ball_rows(model, cfg, f, ep, offs, lens, device, u_zero, h_arr, mom,
@@ -361,10 +361,10 @@ def _eps_ball_rows(model, cfg, f, ep, offs, lens, device, u_zero, h_arr, mom,
 
         def phi(v):
             with torch.no_grad():
-                return _step_hjepa(model, v.unsqueeze(0), u_k, hs).squeeze(0)
+                return _step_lehami(model, v.unsqueeze(0), u_k, hs).squeeze(0)
 
         z0 = torch.cat([q0, p0], dim=-1).detach()
-        J_full = jac_hjepa(model, z0.unsqueeze(0), u_k, hs)
+        J_full = jac_lehami(model, z0.unsqueeze(0), u_k, hs)
 
     jac_ref = _slogdet_per_dim(J_full)
     return [{"eps": e, "n_dim": int(z0.numel()), "logdet_per_dim_jac": jac_ref,

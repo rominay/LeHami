@@ -2,7 +2,7 @@
 # Conservative pendulum, SINGLE ROD (pendulum.h5): Hamiltonian flow vs LeWM.
 #
 #   arm    experiment config                              results/<name>/
-#   hjepa  phase2_hjepa_sg_sep_sreg_joint_ms_d32_exp027   exp027_sg_ms_d32
+#   lehami  phase2_lehami_sg_sep_sreg_joint_ms_d32_exp027   exp027_sg_ms_d32
 #   lewm   phase0_lewm_ms_srnn_k100_exp030                exp030_lewm_ms_srnn_k100
 #
 # One seed each (the config's seed, 42). Split: 450 train / 50 test episodes.
@@ -20,7 +20,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
 MANIFEST="$DATA/split_pendulum_episode_srnn_K100_seed42.json"
 LOG_DIR="$ROOT/lehami/experiments/logs/conservative_single_rod"
-ARMS="hjepa,lewm"
+ARMS="lehami,lewm"
 EVAL_ONLY=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -34,9 +34,9 @@ need_file "$STABLEWM_HOME/pendulum.h5" "run lehami/data/prepare_conservative_dat
 # arm -> config | results name | eval horizon
 spec() {
     case "$1" in
-        hjepa) echo "phase2_hjepa_sg_sep_sreg_joint_ms_d32_exp027|exp027_sg_ms_d32|30" ;;
+        lehami) echo "phase2_lehami_sg_sep_sreg_joint_ms_d32_exp027|exp027_sg_ms_d32|30" ;;
         lewm)  echo "phase0_lewm_ms_srnn_k100_exp030|exp030_lewm_ms_srnn_k100|97" ;;
-        *) die "unknown arm '$1' (hjepa | lewm)" ;;
+        *) die "unknown arm '$1' (lehami | lewm)" ;;
     esac
 }
 

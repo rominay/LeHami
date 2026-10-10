@@ -6,7 +6,7 @@ that duplication, both silent -- no crash, no shape error, just wrong numbers:
 
 1.  `p_0` was read with a 2-point difference over `cfg.history_size` frames.
     `history_size` is 1 for every swing-up run, so the fallback branch fired on
-    EVERY replan and HJEPA planned from `p = 0`, i.e. "the pendulum is at rest",
+    EVERY replan and LeHami planned from `p = 0`, i.e. "the pendulum is at rest",
     which on a swing-up task is the one quantity the experiment is about.
     `history_size` describes the ENCODER's frame window; the momentum stencil is
     a property of the model family (4-frame causal Savitzky-Golay for `sg`).
@@ -88,7 +88,7 @@ class _LeWMStub:
         return ctx + act_emb * self.coef
 
 
-class _HJEPAStub:
+class _LeHamiStub:
     """One action per step; `predictor` records the action it was given."""
 
     def __init__(self):
@@ -105,7 +105,7 @@ class _HJEPAStub:
 
 def _cfg(name, history_size=H_CTX):
     # `embed_dim` is the LeWM-side name for the same quantity. It must be present
-    # even for an hjepa cfg: `_latent_dim` is `cfg.model.get("latent_dim",
+    # even for an lehami cfg: `_latent_dim` is `cfg.model.get("latent_dim",
     # cfg.embed_dim)`, and OmegaConf evaluates that default eagerly.
     return OmegaConf.create(
         {"model": {"name": name, "latent_dim": D, "fd_dt": 1.0},
@@ -126,9 +126,9 @@ def test_sg_anchor_ignores_history_size(history_size):
     ANCHOR_OFFSET`).  The planner derives its context length from this, so if it
     ever starts tracking `history_size` again, `p_0` silently becomes 0.
     """
-    from hjepa.derivative import ANCHOR_OFFSET
+    from lehami.derivative import ANCHOR_OFFSET
 
-    cfg = _cfg("hjepa_sg_sep_sreg_q_ms_conv", history_size)
+    cfg = _cfg("lehami_sg_sep_sreg_q_ms_conv", history_size)
     assert _mom_type(cfg.model.name) == "sg"
     assert _anchor_frame(cfg, "sg") == ANCHOR_OFFSET == 3
     assert _anchor_frame(cfg, "sg") + 1 == 4, "sg needs 4 frames of context"
@@ -142,7 +142,7 @@ def test_sg_momentum_of_a_constant_window_is_zero():
     zero -- which is what makes "upright AND at rest" expressible without any
     special-casing of the goal.
     """
-    from hjepa.derivative import CAUSAL_WINDOW, p_causal_last
+    from lehami.derivative import CAUSAL_WINDOW, p_causal_last
 
     const = torch.randn(1, 1, D).repeat(1, CAUSAL_WINDOW, 1)
     assert p_causal_last(const, 1.0).abs().max() < 1e-6
@@ -150,7 +150,7 @@ def test_sg_momentum_of_a_constant_window_is_zero():
 
 def test_sg_momentum_recovers_a_known_slope():
     """The counterpart: the stencil is not zero on everything."""
-    from hjepa.derivative import CAUSAL_WINDOW, p_causal_last
+    from lehami.derivative import CAUSAL_WINDOW, p_causal_last
 
     ramp = torch.arange(CAUSAL_WINDOW, dtype=torch.float32).view(1, -1, 1) * 3.0
     assert torch.allclose(p_causal_last(ramp, 1.0), torch.tensor(3.0), atol=1e-5)
@@ -246,13 +246,13 @@ def test_lewm_rejects_wrong_length_history():
                        past_actions=[0.0])          # needs h-1 = 2
 
 
-# ── 3. HJEPA takes exactly one action per step, and never pads ───────────────
+# ── 3. LeHami takes exactly one action per step, and never pads ───────────────
 
 
-def test_hjepa_uses_action_t_at_step_t():
+def test_lehami_uses_action_t_at_step_t():
     """One action per step, no window, so no alignment to get wrong -- assert it.
 
-    This is also what makes both arms roll out `horizon` steps: HJEPA consumes 25
+    This is also what makes both arms roll out `horizon` steps: LeHami consumes 25
     torques in 25 calls, and the LeWM arm now does too because its history comes
     from executed actions rather than from the candidate's first h-1 slots (which
     is where `jepa.rollout` takes them, giving T-H+1 steps).  Equal depth is what
@@ -262,8 +262,8 @@ def test_hjepa_uses_action_t_at_step_t():
 
     H = 5
     u = torch.arange(1.0, H + 1.0).view(1, H, 1)
-    m = _HJEPAStub()
-    latent_rollout(m, _cfg("hjepa_sg_sep_sreg_q_ms_conv"),
+    m = _LeHamiStub()
+    latent_rollout(m, _cfg("lehami_sg_sep_sreg_q_ms_conv"),
                    (torch.zeros(1, D), torch.zeros(1, D)), u, torch.device("cpu"))
 
     assert len(m.seen) == H, "one predictor call per horizon step"
@@ -276,8 +276,8 @@ def test_both_arms_roll_out_the_same_number_of_steps():
     H = 9
     u = torch.arange(1.0, H + 1.0).view(1, H, 1)
 
-    hj = _HJEPAStub()
-    latent_rollout(hj, _cfg("hjepa_sg_sep_sreg_q_ms_conv"),
+    hj = _LeHamiStub()
+    latent_rollout(hj, _cfg("lehami_sg_sep_sreg_q_ms_conv"),
                    (torch.zeros(1, D), torch.zeros(1, D)), u, torch.device("cpu"))
     lw = _LeWMStub()
     latent_rollout(lw, _cfg("lewm_ms_conv"), torch.zeros(1, H_CTX, D), u,
@@ -292,7 +292,7 @@ def test_running_cost_returns_one_state_per_step():
 
     H = 6
     u = torch.zeros(1, H, 1)
-    traj = latent_rollout(_HJEPAStub(), _cfg("hjepa_sg_sep_sreg_q_ms_conv"),
+    traj = latent_rollout(_LeHamiStub(), _cfg("lehami_sg_sep_sreg_q_ms_conv"),
                           (torch.zeros(1, D), torch.zeros(1, D)), u,
                           torch.device("cpu"), return_all=True)
     assert len(traj) == H and all(len(s) == 2 for s in traj)
@@ -393,7 +393,7 @@ def test_goal_window_is_arm_independent(tmp_path):
     """Every arm must be handed the SAME episodes or the paired test is void.
 
     The goal context is GOAL_CTX (4, the widest stencil), never the calling arm's
-    h_ctx -- HJEPA/sg wants 4 and LeWM 3, and letting that leak into the sampler
+    h_ctx -- LeHami/sg wants 4 and LeWM 3, and letting that leak into the sampler
     would silently give the two arms different tasks.
     """
     from plan_pendulum_swingup import dataset_goals
@@ -673,11 +673,11 @@ def test_w3_rejects_a_w1_length_history():
                        past_actions=[-1.0, -2.0])
 
 
-def test_hjepa_is_still_refused_at_w3():
+def test_lehami_is_still_refused_at_w3():
     """The guard was relaxed for LeWM ONLY; `_anchor_offset` still ignores W."""
     from plan_pendulum_swingup import _check_plannable
 
-    cfg = _cfg("hjepa_sg_sep_sreg_joint_ms_conv")
+    cfg = _cfg("lehami_sg_sep_sreg_joint_ms_conv")
     cfg.enc_window = 3
     with pytest.raises(NotImplementedError, match="LeWM family only"):
         _check_plannable(cfg, _Args(dataset=None, manifest=None), "a3s_s0")
@@ -865,7 +865,7 @@ def test_run_episode_context_width_is_constant_across_solves(monkeypatch):
     """Every solve re-encodes the same number of frames.
 
     A context that grew or shrank with `done` would feed the encoder a window it
-    was never trained on, and for HJEPA would change the momentum stencil's span
+    was never trained on, and for LeHami would change the momentum stencil's span
     mid-episode -- the failure mode `anchor_from_angles` exists to prevent.
     """
     K = 30
@@ -981,7 +981,7 @@ def _cem_steps(monkeypatch, horizon, action_block):
         seen.append(np.asarray(steps).shape)
         return torch.zeros(len(steps), D)
 
-    def fake_cost(z_end, z_goal, is_hjepa, p_weight):
+    def fake_cost(z_end, z_goal, is_lehami, p_weight):
         return torch.arange(len(z_end), dtype=torch.float32)
 
     monkeypatch.setattr(P, "latent_rollout", fake_rollout)
@@ -1057,7 +1057,7 @@ def test_cem_still_holds_each_torque_for_a_whole_block(monkeypatch):
 # Hydra cfg and every experiment sets the key under `model:`, so `w` was 1 for
 # every arm and none of the four checks could fire.  The live paths read the
 # encoder itself and were always right, so no reported number moved -- but the
-# HJEPA refusal, the GOAL_CTX/GOAL_LEAD checks and the START_CTX check were all
+# LeHami refusal, the GOAL_CTX/GOAL_LEAD checks and the START_CTX check were all
 # silently off.  These tests exist so that cannot happen again.
 
 
@@ -1080,10 +1080,10 @@ def _plan_args():
 
 @pytest.mark.parametrize("window", [2, 3])
 def test_check_plannable_reads_the_window_from_the_model_block(window):
-    """The regression guard: a W>1 HJEPA arm must be REFUSED, not waved through."""
+    """The regression guard: a W>1 LeHami arm must be REFUSED, not waved through."""
     import plan_pendulum_swingup as P
 
-    cfg = _plan_cfg("hjepa_sg_sep_sreg_q_ms_conv", window,
+    cfg = _plan_cfg("lehami_sg_sep_sreg_q_ms_conv", window,
                     enc_variant="diff" if window == 2 else "full")
     with pytest.raises(NotImplementedError, match="LeWM family only"):
         P._check_plannable(cfg, _plan_args(), "a3s")

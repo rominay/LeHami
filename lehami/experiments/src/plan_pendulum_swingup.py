@@ -6,7 +6,7 @@
     number it prints has been recorded.  Run it only after EXP-071/072 have
     trained and their prediction metrics have been read.
 
-The comparison this exists to make: HJEPA (EXP-071) versus LeWM (EXP-072), same
+The comparison this exists to make: LeHami (EXP-071) versus LeWM (EXP-072), same
 data, same encoder, same planner, on a task where the model has to be right about
 *velocity* to succeed.
 
@@ -29,8 +29,8 @@ TWO THINGS ARE KNOWN IN ADVANCE and are built in rather than discovered:
      pixel-identical -- so an encoding of ONE goal image pins theta and nothing
      else.  That does NOT mean either model is blind to velocity: the change is
      visible ACROSS frames and both arms use it (LeWM infers omega from its
-     3-frame latent context; HJEPA builds p by a finite difference on consecutive
-     latents).  The asymmetry is in what the GOAL can express.  HJEPA's state is
+     3-frame latent context; LeHami builds p by a finite difference on consecutive
+     latents).  The asymmetry is in what the GOAL can express.  LeHami's state is
      explicitly (q, p), so "upright AND at rest" is representable as
      (q_goal, p_goal = 0) -- built below.  LeWM's z has no momentum block, so
      there is no coordinate to attach "at rest" to; the measured omega-AUC of
@@ -38,12 +38,12 @@ TWO THINGS ARE KNOWN IN ADVANCE and are built in rather than discovered:
 
      The cost does NOT try to repair that.  It is the squared distance between the
      goal latent and the current one, in whatever state the MODEL itself defines --
-     (q, p) for HJEPA, z for LeWM -- so each arm is scored in its own coordinates
+     (q, p) for LeHami, z for LeWM -- so each arm is scored in its own coordinates
      and nothing is bolted onto either.  An earlier `--goal-frames 2` synthesised a
      velocity channel for LeWM out of a latent difference; it is gone, because it
      scored the baseline on a quantity its state does not contain.
 
-  2. HJEPA carries omega but places ~91.5% of it in the q block.  So how the two
+  2. LeHami carries omega but places ~91.5% of it in the q block.  So how the two
      blocks are weighted is a real choice -- and it is made by the CHECKPOINT, not
      at the command line: the default is `cfg.model.momentum_weight`, the same
      weight the training loss put on the p block.  `--p-weight` overrides it, which
@@ -209,7 +209,7 @@ def encode_frames(model, cfg, thetas, L, m, device, return_cls=False):
 
 
 def anchor_from_angles(model, cfg, thetas, L, m, device, mom_type):
-    """(q, p) for an HJEPA arm, built by run_eval's OWN anchor routine.
+    """(q, p) for an LeHami arm, built by run_eval's OWN anchor routine.
 
     `thetas` must be exactly `_anchor_frame(cfg, mom_type) + 1` angles, oldest
     first: `_build_anchor` indexes the anchor at that offset, so the anchor lands
@@ -274,7 +274,7 @@ def latent_rollout(model, cfg, z_ctx, actions, device, return_all=False,
     test_swingup_plan_matches_training.py` asserts that equality on random
     weights, which is the only thing that keeps this comment honest.
 
-      HJEPA: state is the phase vector (q, p); one predictor call per step, with
+      LeHami: state is the phase vector (q, p); one predictor call per step, with
              the action embedded through the same `action_encoder`.
       LeWM:  state is a sliding context of `history_size` latents; one `predict`
              per step, action window slid alongside.
@@ -308,7 +308,7 @@ def latent_rollout(model, cfg, z_ctx, actions, device, return_all=False,
     different look-ahead depths (23 vs 25) and the paired comparison would be
     between two different questions.
     """
-    is_hjepa = _mom_type(cfg.model.name) != "lewm"
+    is_lehami = _mom_type(cfg.model.name) != "lewm"
     n = actions.shape[0]
     # ── ACTION DIMENSION ─────────────────────────────────────────────────────
     # Branch on the CONFIG's declared action_dim, not on the tensor shape and not on
@@ -342,7 +342,7 @@ def latent_rollout(model, cfg, z_ctx, actions, device, return_all=False,
 
     # A `dt_ref` model integrates at h, not at the flow's constructed scalar. Refuse
     # rather than default: the two agree in shape and differ only in the dynamics.
-    if is_hjepa and flow_h is None and \
+    if is_lehami and flow_h is None and \
             OmegaConf.select(cfg, "model.dt_ref", default=None) is not None:
         raise ValueError(
             f"{cfg.model.name} sets model.dt_ref={cfg.model.dt_ref}, so its predictor "
@@ -351,7 +351,7 @@ def latent_rollout(model, cfg, z_ctx, actions, device, return_all=False,
     # ── THE CONTEXT'S SHAPE, ASSERTED ────────────────────────────────────────
     # The contract between whoever BUILDS the context and this function was only
     # ever written in comments, and both branches have now been violated by a new
-    # environment: the HJEPA branch was handed a raw encoder `q` instead of a
+    # environment: the LeHami branch was handed a raw encoder `q` instead of a
     # (q, p) pair ("unpacks as too many values, which is how this was caught"),
     # and the LeWM branch was handed `encode_states`' per-frame output, (n_frames,
     # d), whose frame axis `_expand_ctx` then tried to broadcast over candidates
@@ -363,10 +363,10 @@ def latent_rollout(model, cfg, z_ctx, actions, device, return_all=False,
     # trained on and returns numbers. That is the worse failure, and it is the one
     # this catches: (n, 5, d) under history_size=3 crashes here instead of silently
     # scoring a different model.
-    if is_hjepa:
+    if is_lehami:
         if not (isinstance(z_ctx, tuple) and len(z_ctx) == 2):
             raise ValueError(
-                f"{cfg.model.name} is an HJEPA arm: z_ctx must be a (q, p) tuple of "
+                f"{cfg.model.name} is an LeHami arm: z_ctx must be a (q, p) tuple of "
                 f"tensors, each (n, d). Got {type(z_ctx).__name__}"
                 + (f" of shape {tuple(z_ctx.shape)}" if hasattr(z_ctx, "shape") else "")
                 + ". Build it with the model's own anchor routine, not the raw encoder."
@@ -393,7 +393,7 @@ def latent_rollout(model, cfg, z_ctx, actions, device, return_all=False,
     h_t = None if flow_h is None else torch.full((n,), float(flow_h), device=device)
 
     traj = []
-    if is_hjepa:
+    if is_lehami:
         q, p = z_ctx                                   # each (n, d)
         for t in range(u.shape[1]):
             a_emb = model.action_encoder(u[:, t : t + 1])          # (n, 1, phase)
@@ -495,7 +495,7 @@ def _check_plannable(cfg, args, key) -> None:
                      SUPPORTED FOR LeWM SINCE 2026-08-23 (EXP-076 b3s): the pixel
                      context widens to `h_ctx + W - 1` and `latent_rollout` shifts
                      the action window by `_enc_shift` = (W-1) - lag, matching
-                     `builders._action_emb`.  Still REFUSED for HJEPA: the momentum
+                     `builders._action_emb`.  Still REFUSED for LeHami: the momentum
                      stencil's `_anchor_offset` does not account for W, so the
                      anchor would read the wrong frames and p would be a plausible
                      wrong number rather than an error.
@@ -510,7 +510,7 @@ def _check_plannable(cfg, args, key) -> None:
     # `model.enc_window`, NOT `enc_window`.  train.py:290 saves the whole nested
     # Hydra cfg and every experiment config sets the key under `model:`, so the
     # top-level lookup selected the default 1 for EVERY arm and silently disabled
-    # all four guards below -- the HJEPA refusal included.  The live paths read
+    # all four guards below -- the LeHami refusal included.  The live paths read
     # the encoder itself (`_enc_shift`, lines 431/989) and were always right, so
     # no reported number is affected; this restores the pre-flight.
     w = int(OmegaConf.select(cfg, "model.enc_window",
@@ -520,7 +520,7 @@ def _check_plannable(cfg, args, key) -> None:
             f"{key} ({cfg.model.name}) was trained with enc_window={w}. The planner "
             f"supports W>1 for the LeWM family only: `_anchor_offset` does not "
             f"account for W, so the momentum stencil would read the wrong frames "
-            f"and p would be a plausible wrong number. NOT IMPLEMENTED for HJEPA -- "
+            f"and p would be a plausible wrong number. NOT IMPLEMENTED for LeHami -- "
             f"do not work around it by widening the context window.")
     # The two windows have separate requirements, so they get separate checks --
     # a wide-W arm can outgrow the START window while the GOAL window still fits
@@ -605,13 +605,13 @@ def _p_weight(cfg, override=None):
     return float(cfg.model.get("momentum_weight", 1.0))
 
 
-def latent_cost(z_pred, z_goal, is_hjepa, p_weight=1.0):
+def latent_cost(z_pred, z_goal, is_lehami, p_weight=1.0):
     """Squared distance to the goal, in each arm's OWN state.
 
     The state is whatever the model says it is, and nothing is synthesised on top
     of it:
 
-      HJEPA  (q, p)  -- momentum is an explicit latent coordinate, so the goal can
+      LeHami  (q, p)  -- momentum is an explicit latent coordinate, so the goal can
                         say "at this pose AND moving this way", and the distance
                         covers both blocks.
       LeWM   z       -- there is no momentum block, so the distance is over z and
@@ -622,12 +622,12 @@ def latent_cost(z_pred, z_goal, is_hjepa, p_weight=1.0):
     out of a latent difference (the former `--goal-frames 2`) scored it on a
     quantity its state does not carry, so it is gone.
 
-    `p_weight` rescales HJEPA's p block. It is NOT a free knob: it comes from the
+    `p_weight` rescales LeHami's p block. It is NOT a free knob: it comes from the
     checkpoint, as `cfg.model.momentum_weight` -- see `_p_weight`.
     """
     if isinstance(z_pred, list):        # RUNNING cost: sum the per-step cost
-        return sum(latent_cost(zp, z_goal, is_hjepa, p_weight) for zp in z_pred)
-    if is_hjepa:
+        return sum(latent_cost(zp, z_goal, is_lehami, p_weight) for zp in z_pred)
+    if is_lehami:
         q, p = z_pred
         qg, pg = z_goal
         return ((q - qg) ** 2).sum(-1) + p_weight * ((p - pg) ** 2).sum(-1)
@@ -660,7 +660,7 @@ def cem_plan(model, cfg, z_ctx, z_goal, horizon, u_max, rng, device, args,
     `.std()`). With 300 continuous samples the elites are never bit-identical, so
     this is a numerical guard rather than a behavioural difference.
     """
-    is_hjepa = _mom_type(cfg.model.name) != "lewm"
+    is_lehami = _mom_type(cfg.model.name) != "lewm"
     N, iters, topk = args.cem_samples, args.cem_iters, args.cem_elites
     blk = args.action_block
     # CEILING, not floor: under `--replan` the horizon shrinks toward the goal
@@ -690,8 +690,8 @@ def cem_plan(model, cfg, z_ctx, z_goal, horizon, u_max, rng, device, args,
                                    return_all=(args.cost == "running"),
                                    past_actions=past_actions,
                                    flow_h=_flow_h(cfg, BASE_DT * args.dt_mult))
-            c = latent_cost(z_end, _expand_goal(z_goal, N), is_hjepa,
-                            _p_weight(cfg, args.p_weight) if is_hjepa else 1.0)
+            c = latent_cost(z_end, _expand_goal(z_goal, N), is_lehami,
+                            _p_weight(cfg, args.p_weight) if is_lehami else 1.0)
             c = c.detach().cpu().numpy()
         elite = cand[np.argsort(c)[:topk]]
         mean, std = elite.mean(0), elite.std(0) + 1e-6
@@ -742,7 +742,7 @@ def _expand_goal(z_goal, n):
 #: The quantity in each case is "pixel frames required to ENCODE this end", taken
 #: as the max over the arms in the registry:
 #:
-#:                       HJEPA (W=1)      LeWM W=1     LeWM W=3     max
+#:                       LeHami (W=1)      LeWM W=1     LeWM W=3     max
 #:   goal, one state     4 (sg stencil)   1 (=W)       3 (=W)        4
 #:   start context       4 (stencil)      3 (=hist)    5 (hist+W-1)  5
 #:
@@ -874,7 +874,7 @@ def dataset_goals(args, h_ctx=GOAL_CTX):
     Conflating them is what made a W=3 arm look like it needed a wider GOAL window.
     """
     # `h_ctx` is accepted so a caller may pass one, and then DELIBERATELY ignored:
-    # both widths are the same for every arm, because handing HJEPA and LeWM
+    # both widths are the same for every arm, because handing LeHami and LeWM
     # different episode lists would void the paired test. Pinned by
     # `test_goal_window_is_arm_independent`.
     import h5py
@@ -960,7 +960,7 @@ def dataset_goals(args, h_ctx=GOAL_CTX):
             act = f["action"][o + si : o + gi, 0]
             # ...and si-START_CTX+1..si-1 are the torques that PRODUCED the start
             # window. The LeWM arm pairs one action per context frame, so it needs
-            # these for the same reason HJEPA needs `sth`, and it needs as many as
+            # these for the same reason LeHami needs `sth`, and it needs as many as
             # `sth` has frames minus one.
             sact = f["action"][o + si - START_CTX + 1 : o + si, 0]
             eps.append(dict(
@@ -991,15 +991,15 @@ def run_episode(model, cfg, ep, planner_seed, args, device):
     dt = BASE_DT * args.dt_mult
     rng = np.random.default_rng(planner_seed)
     mom_type = _mom_type(cfg.model.name)
-    is_hjepa = mom_type != "lewm"
-    # Frames of context per solve.  For HJEPA this is the MOMENTUM STENCIL's span
+    is_lehami = mom_type != "lewm"
+    # Frames of context per solve.  For LeHami this is the MOMENTUM STENCIL's span
     # (`_anchor_frame` + 1: 4 for sg, 2 for fd), NOT cfg.history_size -- see
     # `anchor_from_angles`.  Only the LeWM branch, whose state genuinely is a
     # sliding window of `history_size` latents, reads history_size.
-    h_ctx = (_anchor_frame(cfg, mom_type) + 1) if is_hjepa else int(cfg.history_size) ## a number of how many frames of context to use for the planner
+    h_ctx = (_anchor_frame(cfg, mom_type) + 1) if is_lehami else int(cfg.history_size) ## a number of how many frames of context to use for the planner
     # PIXEL frames needed to produce `h_ctx` LATENT frames. A window-W encoder eats
     # W-1 lead-in frames, so the two differ for LeWM W>1 and are equal everywhere
-    # else (HJEPA is refused at W>1 by `_check_plannable`).
+    # else (LeHami is refused at W>1 by `_check_plannable`).
     enc_w = _enc_window(model)
     h_pix = h_ctx + enc_w - 1
     # How far behind the newest FRAME the newest latent sits. A controller holding
@@ -1014,7 +1014,7 @@ def run_episode(model, cfg, ep, planner_seed, args, device):
     #            "Arrive at the top with no motion."
     #   dataset  the recorded angles ending at the goal frame -> p_goal is that
     #            state's TRUE momentum, read by the same stencil training used.
-    # Each arm's goal is its own state read off the goal frame(s): HJEPA needs the
+    # Each arm's goal is its own state read off the goal frame(s): LeHami needs the
     # whole stencil window, because p is part of that state; LeWM needs the goal
     # frame alone, because z is its whole state.
     goal_th = (g["thetas"] if g["thetas"] is not None
@@ -1026,7 +1026,7 @@ def run_episode(model, cfg, ep, planner_seed, args, device):
     def _goal_latent(window, at):
         """The arm's own latent target for the frame at index `at` of `window`."""
         with torch.no_grad():
-            if is_hjepa:
+            if is_lehami:
                 # The stencil is causal: h_ctx frames ENDING at the goal frame. It
                 # must not run past `at` or the anchor would read frames after it.
                 return anchor_from_angles(model, cfg, window[at + 1 - h_ctx: at + 1],
@@ -1055,9 +1055,9 @@ def run_episode(model, cfg, ep, planner_seed, args, device):
         f"start window must END at theta0: {hist[-1]} vs {theta}")
     # Torques actually applied, index-aligned with the transitions out of `hist`.
     # Only the LeWM arm reads it (its predictor takes an action per context slot);
-    # HJEPA consumes one action per step and needs no history. See `latent_rollout`.
+    # LeHami consumes one action per step and needs no history. See `latent_rollout`.
     # Seeded alongside `hist` for the same reason: fixing only the angles would give
-    # HJEPA a true p_start while still telling LeWM that no torque was applied at
+    # LeHami a true p_start while still telling LeWM that no torque was applied at
     # its context frames, which breaks the pairing from the other side.
     act_hist = list(ep.get("start_actions") or [])[-(h_pix - 1):] if h_pix > 1 else []
     # Distances are now measured to THE GOAL, not to upright. For --goal-mode
@@ -1092,7 +1092,7 @@ def run_episode(model, cfg, ep, planner_seed, args, device):
         # recorded run-up to seed from.
         ctx_th = ([hist[0]] * max(0, h_pix - len(hist)) + hist)[-h_pix:]
         with torch.no_grad():
-            if is_hjepa:
+            if is_lehami:
                 # (q, p) via run_eval's anchor -- the same stencil training used, on
                 # the same construction the GOAL anchor gets: h_ctx real, distinct,
                 # consecutive angles. That symmetry is the point; see `hist` above.
@@ -1108,7 +1108,7 @@ def run_episode(model, cfg, ep, planner_seed, args, device):
         # the repeated initial frame and nothing had been applied to them yet.
         past = None
         n_past = h_ctx - 1 + enc_lag          # must match `latent_rollout`
-        if not is_hjepa and n_past > 0:
+        if not is_lehami and n_past > 0:
             recent = act_hist[-n_past:]
             past = [0.0] * (n_past - len(recent)) + list(recent)
 
@@ -1290,7 +1290,7 @@ def main() -> None:
                          "steps and is sound at any receding. Oracle 2x2 (16 ICs): "
                          "terminal+receding5 = 0/16, all three other corners 16/16.")
     ap.add_argument("--p-weight", type=float, default=None,
-                    help="weight on the p block of the latent cost (HJEPA only). "
+                    help="weight on the p block of the latent cost (LeHami only). "
                          "DEFAULT = the checkpoint's own cfg.model.momentum_weight, "
                          "i.e. the weighting the model was TRAINED under. Pass a "
                          "value only to run the reweighting ablation deliberately.")

@@ -35,7 +35,7 @@ printed on the figure is computed by this script from the composition it draws.
 
     .venv/bin/python lehami/experiments/src/make_concept_properties_figure.py
 
-Writes submission/figs/diagrams/concept_hjepa_properties.pdf (+ .png).
+Writes submission/figs/diagrams/concept_lehami_properties.pdf (+ .png).
 """
 from __future__ import annotations
 
@@ -300,7 +300,7 @@ def main():
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
-        p = OUT_DIR / f"concept_hjepa_properties.{ext}"
+        p = OUT_DIR / f"concept_lehami_properties.{ext}"
         fig.savefig(p, dpi=200, bbox_inches="tight")
         print(f"wrote {p}")
     print("transported cloud areas:", [f"{a:.6f}" for a in areas],

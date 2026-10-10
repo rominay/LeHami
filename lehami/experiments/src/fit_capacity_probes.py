@@ -5,16 +5,16 @@ Runs entirely on the `probe_features.npz` files written by `dump_probe_fit_scatt
 -- no GPU, no checkpoint, no pixel H5.  Local CPU job.
 
     uv run python lehami/experiments/src/fit_capacity_probes.py \
-        --exps exp071_a0s_hjepa_s0,exp072_b0s_lewm_s0,exp075_a3s_hjepa_s0
+        --exps exp071_a0s_lehami_s0,exp072_b0s_lewm_s0,exp075_a3s_lehami_s0
 
 ── THE QUESTION ─────────────────────────────────────────────────────────────────────
-The shipped probes disagree sharply on HJEPA: Ridge gets ~52° on theta while a 25-NN
+The shipped probes disagree sharply on LeHami: Ridge gets ~52° on theta while a 25-NN
 gets ~10.5°, and LeWM gets ~0.8° with either.  Two readings fit that:
 
-  (A) REPARAMETRISATION.  The angle is in HJEPA's (q, p) but on a curved manifold, so a
+  (A) REPARAMETRISATION.  The angle is in LeHami's (q, p) but on a curved manifold, so a
       linear readout cannot see it.  Predicts: a higher-capacity probe closes most of the
       gap to LeWM.
-  (B) INFORMATION LOSS.  The angle is largely gone -- HJEPA's q is 32-dim against LeWM's
+  (B) INFORMATION LOSS.  The angle is largely gone -- LeHami's q is 32-dim against LeWM's
       64, and its other 32 inputs are a Savitzky-Golay stencil OF q, not an independent
       view.  Predicts: capacity does not help; the MLP stalls near the KNN number.
 

@@ -1,7 +1,7 @@
 """Planning compute of the K=30 swing-up replanning ladder: FLOPs and isolated wall time.
 
 WHY THIS EXISTS
-    Fig 8'''' puts a0q (EXP-079 HJEPA), b0s (EXP-072 LeWM W=1) and b3s (EXP-076 LeWM
+    Fig 8'''' puts a0q (EXP-079 LeHami), b0s (EXP-072 LeWM W=1) and b3s (EXP-076 LeWM
     W=3) on one CEM budget, 300 x 30 -- but equal budget is not equal compute: each
     candidate is scored by a different model. The runs DID log time (`wall_s`, `plan_s`,
     `cell_wall_s`), but those numbers track how the cluster packed the jobs, not the
@@ -11,7 +11,7 @@ WHY THIS EXISTS
 
       gflops   FlopCounterMode around the planner's OWN `run_episode` -- every encoder
                call, every CEM iteration, every predictor step, including the
-               autograd.grad calls inside HJEPA's leapfrog. Hardware- and
+               autograd.grad calls inside LeHami's leapfrog. Hardware- and
                co-tenancy-independent, and deterministic for a given rung.
       time     the same `run_episode`, one process, one GPU, nothing else running,
                arms interleaved per episode so drift hits all three alike. Median
@@ -41,8 +41,8 @@ CUDA ONLY
 USAGE
     python lehami/experiments/src/measure_planning_compute.py            # 300x30
     python lehami/experiments/src/measure_planning_compute.py --smoke    # 1 iter
-    python .../measure_planning_compute.py --arms hjepa --cem-iters 48        # one budget
-    python .../measure_planning_compute.py --arms hjepa --cells cell3 \
+    python .../measure_planning_compute.py --arms lehami --cem-iters 48        # one budget
+    python .../measure_planning_compute.py --arms lehami --cells cell3 \
         --receding 6 --cell-label cell6_goal_H30_R6                           # a new rung
     python .../measure_planning_compute.py --build-grid                       # merge
     bash lehami/experiments/actuated_planning.sh                        # all, with the ladder
@@ -71,7 +71,7 @@ from torch.utils.flop_counter import FlopCounterMode
 
 import plan_pendulum_swingup as P
 from run_eval import _enc_shift, _enc_window, load_model
-from hjepa.builders import REGISTRY
+from lehami.builders import REGISTRY
 
 ROOT = P.ROOT
 SWM = Path(os.environ.get("STABLEWM_HOME", Path.home() / ".stable_worldmodel"))
@@ -85,15 +85,15 @@ CELLS = ["cell1_single_shot_H30_R30", "cell2_goal_H30_R15", "cell3_goal_H30_R9"]
 #: key -> (tag, experiment, run-name suffix). Keys match the notebook's DA.key; the
 #: suffix is the one actuated_planning.sh uses, so both find the same `*_<cfg>_s0` dir.
 ARMS = {
-    "hjepa":   ("a0q", "EXP-079", "hjepa_sg_sep_conv_w1_swingup_exp079_a0q"),
+    "lehami":   ("a0q", "EXP-079", "lehami_sg_sep_conv_w1_swingup_exp079_a0q"),
     "lewm":    ("b0s", "EXP-072", "lewm_ms_conv_w1_swingup_exp072_b0s"),
     "lewm_w3": ("b3s", "EXP-076", "lewm_ms_conv_w3_swingup_exp076_b3s"),
 }
 
 #: The compute-matched grid, one CSV per (arms, cem_iters) -- None is the cells' own
 #: 300x30. LEVEL pairs the iso-FLOP points: `low` ~ a0q@300x30, `high` ~ b0s@300x30.
-GRID = [("hjepa,lewm,lewm_w3", None), ("hjepa", 48), ("lewm", 19), ("lewm_w3", 18)]
-LEVEL = {("hjepa", 30): "low", ("hjepa", 48): "high",
+GRID = [("lehami,lewm,lewm_w3", None), ("lehami", 48), ("lewm", 19), ("lewm_w3", 18)]
+LEVEL = {("lehami", 30): "low", ("lehami", 48): "high",
          ("lewm", 19): "low", ("lewm", 30): "high",
          ("lewm_w3", 18): "low", ("lewm_w3", 30): "high"}
 
@@ -212,7 +212,7 @@ def cell_args(cell, device, smoke, cem_iters=None, receding=None, cem_samples=No
             "success_at", "cem_samples", "cem_iters", "cem_elites", "ic_seed"]
     for k in keep:        # the three arms ran one protocol, or the plot is meaningless
         assert len({json.dumps(m[k]) for m in metas.values()}) == 1, f"{cell}: {k} differs"
-    a = dict(metas["hjepa"])
+    a = dict(metas["lehami"])
     a.update(dataset=str(SWM / "pendulum_swingup.h5"),
              manifest=str(ROOT / "lehami" / "data" / Path(a["manifest"]).name),
              device=str(device), p_weight=None)
@@ -246,7 +246,7 @@ def cell_args(cell, device, smoke, cem_iters=None, receding=None, cem_samples=No
 def count_flops(model, cfg, ep, args, device):
     """Total FLOPs of one episode, split by CALL SITE rather than by module.
 
-    Module attribution is unreliable here twice over: HJEPA's leapfrog runs
+    Module attribution is unreliable here twice over: LeHami's leapfrog runs
     autograd.grad, whose backward matmuls the engine executes outside any module's
     forward (a0q: 91 GF filed under HamiltonianPredictor vs ~265 GF actually spent),
     and b3s's TemporalConvEncoder is driven through its children, so it appears as a
@@ -333,7 +333,7 @@ def main():
     # CUDA on purpose, not a convenience. On CPU, SDPA dispatches to
     # `_scaled_dot_product_flash_attention_for_cpu`, which FlopCounterMode has no
     # formula for, so LeWM's attention is silently counted as 0 (-1.0%; measured
-    # 193.459 vs 195.450 GF at R=30, CEM 300x1). HJEPA has no attention and matches
+    # 193.459 vs 195.450 GF at R=30, CEM 300x1). LeHami has no attention and matches
     # to the FLOP. The CUDA kernels (efficient / flash / cuDNN) are all counted, and
     # `count_flops` refuses a LeWM count with no attention in it.
     device = torch.device("cuda")

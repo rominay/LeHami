@@ -154,7 +154,7 @@ class _MockRolloutModel(nn.Module):
 
 def _make_cfg() -> SimpleNamespace:
     model_dict = {
-        "name":       "hjepa_sg_sep_sreg_joint_ms",
+        "name":       "lehami_sg_sep_sreg_joint_ms",
         "fd_dt":      1.0,
         "latent_dim": LATENT_DIM,
     }
@@ -308,8 +308,8 @@ class TestRolloutRowsStructure:
             missing = required - set(row.keys())
             assert not missing, f"Rollout row k={row['k']} missing: {missing}"
 
-    def test_p_columns_present_for_hjepa(self, rollout_result):
-        """HJEPA models (has_p=True) must report rmse_norm_p and r2_p."""
+    def test_p_columns_present_for_lehami(self, rollout_result):
+        """LeHami models (has_p=True) must report rmse_norm_p and r2_p."""
         rr, _, _ = rollout_result
         for row in rr:
             assert "rmse_norm_p" in row, f"Missing rmse_norm_p at k={row['k']}"

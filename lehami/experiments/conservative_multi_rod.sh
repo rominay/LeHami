@@ -3,7 +3,7 @@
 # the main conservative comparison, Hamiltonian flow vs LeWM.
 #
 #   arm  model                     experiment config                                  results/<name>[_s1,_s2]/
-#   a0m  Hamiltonian flow, W=1     phase2_hjepa_sg_sep_conv_w1_multi_exp067_a0m       exp067_a0m_hjepa_w1_multi
+#   a0m  Hamiltonian flow, W=1     phase2_lehami_sg_sep_conv_w1_multi_exp067_a0m       exp067_a0m_lehami_w1_multi
 #   b0m  LeWM, W=1                 phase0_lewm_ms_conv_w1_multi_exp068_b0m            exp068_b0m_lewm_w1_multi
 #   b1m  LeWM, 3-frame encoder     phase0_lewm_ms_conv_te_w3_multi_exp066_b1m         exp066_b1m_lewm_te_w3_multi
 #
@@ -22,7 +22,7 @@
 #   physics_reversal.csv  K steps forward then K back, reversed by dt -> -dt (exact
 #                         for leapfrog: the control) and by p -> -p (exact only if the
 #                         learned kinetic energy is even in p)
-# Paper: the dt-and-reversal figure. Written to results/exp067_a0m_hjepa_w1_multi/.
+# Paper: the dt-and-reversal figure. Written to results/exp067_a0m_lehami_w1_multi/.
 #
 # Once a0m and b0m (config seed) both exist, eval_jacobian_volume.py measures how the
 # one-step latent map changes phase-space volume, (1/n) log|det J| (0 = preserved,
@@ -61,7 +61,7 @@ need_file "$STABLEWM_HOME/pendulum_multi_v2.h5" "run lehami/data/prepare_conserv
 # arm -> config | results name | default seeds
 spec() {
     case "$1" in
-        a0m) echo "phase2_hjepa_sg_sep_conv_w1_multi_exp067_a0m|exp067_a0m_hjepa_w1_multi|default 1 2" ;;
+        a0m) echo "phase2_lehami_sg_sep_conv_w1_multi_exp067_a0m|exp067_a0m_lehami_w1_multi|default 1 2" ;;
         b0m) echo "phase0_lewm_ms_conv_w1_multi_exp068_b0m|exp068_b0m_lewm_w1_multi|default 1 2" ;;
         b1m) echo "phase0_lewm_ms_conv_te_w3_multi_exp066_b1m|exp066_b1m_lewm_te_w3_multi|default" ;;
         *) die "unknown arm '$1' (a0m | b0m | b1m)" ;;
@@ -95,7 +95,7 @@ for arm in "${ARM_LIST[@]}"; do
     done
 done
 
-if has_ckpt "$(config_suffix phase2_hjepa_sg_sep_conv_w1_multi_exp067_a0m)" \
+if has_ckpt "$(config_suffix phase2_lehami_sg_sep_conv_w1_multi_exp067_a0m)" \
             "$(config_suffix phase0_lewm_ms_conv_w1_multi_exp068_b0m)"; then
     for mode in anchor rollout epsball; do
         case "$mode" in

@@ -2,7 +2,7 @@
 
 Provides:
     RolloutStep       — per-step result (q_pred, p_pred, q_gt, p_gt as CPU numpy)
-    rollout_episode() — autoregressive rollout for one episode (hjepa + lewm)
+    rollout_episode() — autoregressive rollout for one episode (lehami + lewm)
     probe_features()  — build probe input (q or qp) from a RolloutStep
 """
 from __future__ import annotations
@@ -54,7 +54,7 @@ def _p_gt_at(model, cls: torch.Tensor, q_enc: torch.Tensor,
         c = torch.cat([cls[frame].unsqueeze(0), cls[frame - 1].unsqueeze(0)], dim=-1)
         return model.mom_projector(c).squeeze(0).cpu().numpy()
     if mtype == "sg":
-        from hjepa.derivative import p_interp_series
+        from lehami.derivative import p_interp_series
         return p_interp_series(q_enc, fd_dt)[frame].cpu().numpy()
     return ((q_enc[frame] - q_enc[frame - 1]) / fd_dt).cpu().numpy()
 
@@ -88,7 +88,7 @@ def rollout_episode(
     if mtype == "lewm":
         return _rollout_lewm(model, pixels, cfg, device, h, d, k_max, enc_batch)
 
-    # ── hjepa path ─────────────────────────────────────────────────────────────
+    # ── lehami path ─────────────────────────────────────────────────────────────
     cls, q_enc = _encode_episode(model, pixels, enc_batch)  # (L, vit_d), (L, d)
     q0, p0     = _build_anchor(model, cls, q_enc, mtype, cfg, device)
     u_emb      = _zero_action_emb(model, cfg, device)       # (1, phase_dim)

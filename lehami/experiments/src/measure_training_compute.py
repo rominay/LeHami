@@ -1,14 +1,14 @@
 """Training cost per step of the pendulum_multi_v2 arms (EXP-096): FLOPs and isolated time.
 
 WHY THIS EXISTS
-    EXP-096 asks how much cheaper HJEPA is to train than LeWM. The W&B runtimes of the
+    EXP-096 asks how much cheaper LeHami is to train than LeWM. The W&B runtimes of the
     100-epoch runs (87-102 min on an L40S) cannot answer it: the four te_w3_multi arms
     trained CONCURRENTLY on one GPU, so their wall time measures the packing -- the same
     failure as the planners' logged `wall_s`. This script measures one TRAINING STEP of
     each arm directly, two ways:
 
       gflops   FlopCounterMode around forward + backward of one real batch, under the
-               training precision (bf16-mixed autocast). Includes HJEPA's leapfrog
+               training precision (bf16-mixed autocast). Includes LeHami's leapfrog
                `autograd.grad(create_graph=True)` and the backward through it -- the
                second-order cost that makes "the Hamiltonian is cheaper" non-obvious.
       time     forward + backward + AdamW step, one process, arms interleaved per step,
@@ -17,7 +17,7 @@ WHY THIS EXISTS
 
     Steps per epoch come from the REAL training loader (the manifest split, batch 32,
     drop_last), and they differ by arm: clips per episode = train_frames - num_steps + 1,
-    and num_steps is history_size + num_preds (14 for HJEPA W=1, 11 for LeWM W=1, 13 for
+    and num_steps is history_size + num_preds (14 for LeHami W=1, 11 for LeWM W=1, 13 for
     LeWM W=3). So an "epoch" is not the same amount of work across arms; per-step and
     per-epoch numbers are both reported.
 
@@ -48,13 +48,13 @@ import torch
 from omegaconf import OmegaConf
 from torch.utils.flop_counter import FlopCounterMode
 
-import run_eval  # noqa: F401  -- puts lehami/models (hjepa, leworldmodel) on sys.path
+import run_eval  # noqa: F401  -- puts lehami/models (lehami, leworldmodel) on sys.path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "lehami" / "training"))
 import train as T  # noqa: E402  -- the trainer's own dataset + manifest split
 import stable_pretraining as spt  # noqa: E402
-from hjepa.builders import REGISTRY  # noqa: E402
+from lehami.builders import REGISTRY  # noqa: E402
 
 SWM = Path(os.environ.get("STABLEWM_HOME", Path.home() / ".stable_worldmodel"))
 CKPT = SWM / "checkpoints"
@@ -62,14 +62,14 @@ OUT = ROOT / "outputs" / "exp096"
 
 #: arm -> (experiment, label, checkpoint dir). Only config.yaml is read from the dir.
 ARMS = {
-    "a0m": ("EXP-067", "HJEPA W=1",
-            "hjepa_sg_sep_sreg_joint_ms_conv_pendulum_multi_v2_sg_sep_conv_w1_multi_exp067_a0m"),
+    "a0m": ("EXP-067", "LeHami W=1",
+            "lehami_sg_sep_sreg_joint_ms_conv_pendulum_multi_v2_sg_sep_conv_w1_multi_exp067_a0m"),
     "b0m": ("EXP-068", "LeWM W=1",
             "lewm_ms_conv_pendulum_multi_v2_ms_conv_w1_multi_exp068_b0m"),
     "b1m": ("EXP-066", "LeWM W=3",
             "lewm_ms_conv_pendulum_multi_v2_ms_conv_te_w3_multi_exp066_b1m"),
-    "a1m": ("EXP-065", "HJEPA W=3",
-            "hjepa_sg_sep_sreg_joint_ms_conv_pendulum_multi_v2_sg_sep_conv_te_w3_multi_exp065_a1m"),
+    "a1m": ("EXP-065", "LeHami W=3",
+            "lehami_sg_sep_sreg_joint_ms_conv_pendulum_multi_v2_sg_sep_conv_te_w3_multi_exp065_a1m"),
 }
 
 
@@ -132,7 +132,7 @@ def count_flops(fwd_bwd, batch, opt, is_lewm):
 
 def main():
     ap = argparse.ArgumentParser()
-    # a1m (HJEPA W=3) is left out of the default: it does not train (val loss bottoms at
+    # a1m (LeHami W=3) is left out of the default: it does not train (val loss bottoms at
     # epoch 2 and diverges), so its cost is not a comparison anyone should read.
     ap.add_argument("--arms", default="a0m,b0m,b1m", help=f"comma list of {list(ARMS)}")
     ap.add_argument("--n-warm", type=int, default=10)

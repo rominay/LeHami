@@ -73,7 +73,7 @@ rung() {
 }
 config() {
     case "$1" in
-        a0q) echo phase2_hjepa_sg_sep_conv_w1_swingup_exp079_a0q ;;
+        a0q) echo phase2_lehami_sg_sep_conv_w1_swingup_exp079_a0q ;;
         b0s) echo phase0_lewm_ms_conv_w1_swingup_exp072_b0s ;;
         b3s) echo phase0_lewm_ms_conv_w3_swingup_exp076_b3s ;;
         b3f) echo phase0_lewm_ms_conv_w3_free_swingup_exp099_b3f ;;
@@ -117,7 +117,7 @@ done
 if [[ "$COMPUTE" == true ]]; then
     # One call at the reference budget (CEM 300 x 30) for all arms, then each arm at
     # the iteration count that matches the others' compute, then merge.
-    for spec in "hjepa,lewm,lewm_w3:" "hjepa:48" "lewm:19" "lewm_w3:18"; do
+    for spec in "lehami,lewm,lewm_w3:" "lehami:48" "lewm:19" "lewm_w3:18"; do
         arms="${spec%%:*}" iters="${spec##*:}"
         log "planning compute: arms=$arms cem_iters=${iters:-30}"
         "${PY[@]}" "$SRC/measure_planning_compute.py" --arms "$arms" ${iters:+--cem-iters "$iters"} \

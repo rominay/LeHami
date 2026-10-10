@@ -1,6 +1,6 @@
 {
  "args": {
-  "checkpoints": "a0q_s0=${STABLEWM_HOME}/checkpoints/hjepa_sg_sep_sreg_q_ms_conv_pendulum_swingup_hjepa_sg_sep_conv_w1_swingup_exp079_a0q_s0/best.ckpt",
+  "checkpoints": "a0q_s0=${STABLEWM_HOME}/checkpoints/lehami_sg_sep_sreg_q_ms_conv_pendulum_swingup_lehami_sg_sep_conv_w1_swingup_exp079_a0q_s0/best.ckpt",
   "n_ic": 16,
   "planner_seeds": 3,
   "horizon": 30,

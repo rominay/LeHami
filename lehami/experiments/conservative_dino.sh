@@ -3,7 +3,7 @@
 # CLS token) shared by both arms, so the predictor is the only difference.
 #
 #   arm  model                        experiment config                     results/<name>/
-#   a0d  Hamiltonian flow             phase2_hjepa_sg_sep_dino_cls_exp098_a0d  exp098_a0d_hjepa_dino
+#   a0d  Hamiltonian flow             phase2_lehami_sg_sep_dino_cls_exp098_a0d  exp098_a0d_lehami_dino
 #   b0d  DINO-WM ViT predictor        phase0_dino_wm_cls_exp098_b0d            exp098_b0d_dino_wm_cls
 #
 # Each arm is evaluated twice: at best.ckpt, and at the epoch-60 checkpoint
@@ -42,7 +42,7 @@ export TORCH_HOME="${TORCH_HOME:-$HOME/.cache/torch}"
 # arm -> config | results name
 spec() {
     case "$1" in
-        a0d) echo "phase2_hjepa_sg_sep_dino_cls_exp098_a0d|exp098_a0d_hjepa_dino" ;;
+        a0d) echo "phase2_lehami_sg_sep_dino_cls_exp098_a0d|exp098_a0d_lehami_dino" ;;
         b0d) echo "phase0_dino_wm_cls_exp098_b0d|exp098_b0d_dino_wm_cls" ;;
         *) die "unknown arm '$1' (a0d | b0d)" ;;
     esac

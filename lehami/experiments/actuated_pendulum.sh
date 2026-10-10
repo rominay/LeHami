@@ -3,12 +3,12 @@
 # paper reports, 3 seeds each (0, 1, 2).
 #
 #   arm  model                                  encoder   experiment config
-#   a0q  Hamiltonian flow, SIGReg on q  (main)  W=1       phase2_hjepa_sg_sep_conv_w1_swingup_exp079_a0q
-#   a0p  Hamiltonian flow, SIGReg on q, p split W=1       phase2_hjepa_sg_sep_conv_w1_swingup_exp080_a0p
-#   a0s  Hamiltonian flow, SIGReg on [q,p]      W=1       phase2_hjepa_sg_sep_conv_w1_swingup_exp071_a0s
-#   a3q  Hamiltonian flow, SIGReg on q          W=3       phase2_hjepa_sg_sep_conv_w3_swingup_exp081_a3q
-#   a3p  Hamiltonian flow, SIGReg on q, p split W=3       phase2_hjepa_sg_sep_conv_w3_swingup_exp082_a3p
-#   a3s  Hamiltonian flow, SIGReg on [q,p]      W=3       phase2_hjepa_sg_sep_conv_w3_swingup_exp075_a3s
+#   a0q  Hamiltonian flow, SIGReg on q  (main)  W=1       phase2_lehami_sg_sep_conv_w1_swingup_exp079_a0q
+#   a0p  Hamiltonian flow, SIGReg on q, p split W=1       phase2_lehami_sg_sep_conv_w1_swingup_exp080_a0p
+#   a0s  Hamiltonian flow, SIGReg on [q,p]      W=1       phase2_lehami_sg_sep_conv_w1_swingup_exp071_a0s
+#   a3q  Hamiltonian flow, SIGReg on q          W=3       phase2_lehami_sg_sep_conv_w3_swingup_exp081_a3q
+#   a3p  Hamiltonian flow, SIGReg on q, p split W=3       phase2_lehami_sg_sep_conv_w3_swingup_exp082_a3p
+#   a3s  Hamiltonian flow, SIGReg on [q,p]      W=3       phase2_lehami_sg_sep_conv_w3_swingup_exp075_a3s
 #   b0s  LeWM                                   W=1       phase0_lewm_ms_conv_w1_swingup_exp072_b0s
 #   b3s  LeWM                                   W=3       phase0_lewm_ms_conv_w3_swingup_exp076_b3s
 #   b3f  LeWM, untied temporal window           W=3       phase0_lewm_ms_conv_w3_free_swingup_exp099_b3f
@@ -61,12 +61,12 @@ need_file "$STABLEWM_HOME/pendulum_swingup.h5" "run lehami/data/prepare_actuated
 # The horizon is the longest rollout an 80-frame episode allows after the anchor.
 spec() {
     case "$1" in
-        a0q) echo "phase2_hjepa_sg_sep_conv_w1_swingup_exp079_a0q|exp079_a0q_hjepa|76|single" ;;
-        a0p) echo "phase2_hjepa_sg_sep_conv_w1_swingup_exp080_a0p|exp080_a0p_hjepa|76|single" ;;
-        a3q) echo "phase2_hjepa_sg_sep_conv_w3_swingup_exp081_a3q|exp081_a3q_hjepa|74|single" ;;
-        a3p) echo "phase2_hjepa_sg_sep_conv_w3_swingup_exp082_a3p|exp082_a3p_hjepa|74|single" ;;
-        a0s) echo "phase2_hjepa_sg_sep_conv_w1_swingup_exp071_a0s|exp071_a0s_hjepa|76|probe" ;;
-        a3s) echo "phase2_hjepa_sg_sep_conv_w3_swingup_exp075_a3s|exp075_a3s_hjepa|76|probe" ;;
+        a0q) echo "phase2_lehami_sg_sep_conv_w1_swingup_exp079_a0q|exp079_a0q_lehami|76|single" ;;
+        a0p) echo "phase2_lehami_sg_sep_conv_w1_swingup_exp080_a0p|exp080_a0p_lehami|76|single" ;;
+        a3q) echo "phase2_lehami_sg_sep_conv_w3_swingup_exp081_a3q|exp081_a3q_lehami|74|single" ;;
+        a3p) echo "phase2_lehami_sg_sep_conv_w3_swingup_exp082_a3p|exp082_a3p_lehami|74|single" ;;
+        a0s) echo "phase2_lehami_sg_sep_conv_w1_swingup_exp071_a0s|exp071_a0s_lehami|76|probe" ;;
+        a3s) echo "phase2_lehami_sg_sep_conv_w3_swingup_exp075_a3s|exp075_a3s_lehami|76|probe" ;;
         b0s) echo "phase0_lewm_ms_conv_w1_swingup_exp072_b0s|exp072_b0s_lewm|76|probe" ;;
         b3s) echo "phase0_lewm_ms_conv_w3_swingup_exp076_b3s|exp076_b3s_lewm|76|probe" ;;
         b3f) echo "phase0_lewm_ms_conv_w3_free_swingup_exp099_b3f|exp099_b3f_lewm|76|probe" ;;
@@ -104,7 +104,7 @@ done
 
 # Jacobian log-volume of the one-step map along a 76-step rollout, at each
 # episode's true torque (seed 0 of a0q and b0s).
-if has_ckpt "$(seed_suffix phase2_hjepa_sg_sep_conv_w1_swingup_exp079_a0q 0)" \
+if has_ckpt "$(seed_suffix phase2_lehami_sg_sep_conv_w1_swingup_exp079_a0q 0)" \
             "$(seed_suffix phase0_lewm_ms_conv_w1_swingup_exp072_b0s 0)"; then
     log "jacobian volume  a0q_s0, b0s_s0"
     "${PY[@]}" "$SRC/eval_jacobian_volume.py" --arms a0q,b0s --horizon 76 \
@@ -118,7 +118,7 @@ fi
 # Probe capacity at the anchor: ridge vs 25-NN vs MLP on the same dumped features,
 # for every arm/seed that has them (CPU only) -> results/capacity_probes.csv.
 cap=()
-for c in exp079_a0q_hjepa exp080_a0p_hjepa exp082_a3p_hjepa exp072_b0s_lewm exp076_b3s_lewm; do
+for c in exp079_a0q_lehami exp080_a0p_lehami exp082_a3p_lehami exp072_b0s_lewm exp076_b3s_lewm; do
     for s in 0 1 2; do
         f="$ROOT/lehami/experiments/results/${c}_s$s/probe_features.npz"
         [[ -f "$f" ]] && cap+=("${c}_s$s")

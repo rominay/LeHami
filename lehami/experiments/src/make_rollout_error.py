@@ -18,7 +18,7 @@ steps and at each step k computes:
         omega_mae      MAE of predicted ω vs ground truth (rad/s)
         omega_r2       R² of predicted ω
 
-    Energy metric (hjepa only):
+    Energy metric (lehami only):
         energy_mean, energy_std  mean ± std of H_φ(q_k, p_k) across episodes
 
 Output:
@@ -26,9 +26,9 @@ Output:
 
 Usage:
     python lehami/experiments/src/make_rollout_error.py \\
-        --checkpoint ~/.stable_worldmodel/checkpoints/hjepa_fd_sep_lmom_pendulum_fd_sep_lmom_d192/best.ckpt \\
+        --checkpoint ~/.stable_worldmodel/checkpoints/lehami_fd_sep_lmom_pendulum_fd_sep_lmom_d192/best.ckpt \\
         --manifest   lehami/data/split_pendulum_episode_seed42.json \\
-        --exp-name   exp013_hjepa_fd_sep_lmom \\
+        --exp-name   exp013_lehami_fd_sep_lmom \\
         --horizon    97 --split test --device cuda
 
     # smoke test
